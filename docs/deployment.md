@@ -6,7 +6,8 @@ La raíz web en Plesk debe ser `prensa.portada.info/public`, con certificado HTT
 
 ## Preparación única
 
-Configurar los secretos de Actions: SSH_HOST, SSH_PORT, SSH_USER,
+El puerto SSH está fijado en 22 en el flujo; no necesita un secreto.
+Configurar los secretos de Actions: SSH_HOST, SSH_USER,
 SSH_PRIVATE_KEY, SSH_KNOWN_HOSTS, DEPLOY_PATH.
 SSH_KNOWN_HOSTS debe contener la clave pública del host obtenida de una
 conexión de confianza y verificada con el servidor; no la clave del usuario.
