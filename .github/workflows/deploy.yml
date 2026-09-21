@@ -1,0 +1,83 @@
+name: Desplegar prensa.portada.info
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: prensa-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_PORT: ${{ secrets.SSH_PORT }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Compilar estilos y JavaScript
+        run: |
+          npm ci
+          npm run build
+      - name: Preparar SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          test "$DEPLOY_PATH" = /var/www/vhosts/portada.info/prensa.portada.info
+          test "$SSH_PORT" = 22
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CONFIG
+          Host production
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+          CONFIG
+      - name: Comprobar servidor y activar mantenimiento
+        run: |
+          ssh production 'bash -se' <<'REMOTE'
+          export PATH="/opt/plesk/php/8.3/bin:$PATH"
+          cd /var/www/vhosts/portada.info/prensa.portada.info
+          test -s .env || { echo 'Crea primero el .env de producción'; exit 1; }
+          command -v composer
+          command -v rsync
+          php -r 'foreach (["mbstring","openssl","pdo_mysql","session","tokenizer","xml","curl","dom","fileinfo"] as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "Falta: $e\n"); exit(1); } }'
+          if test -f vendor/autoload.php; then php artisan down --retry=60; fi
+          REMOTE
+      - name: Transferir aplicación
+        run: |
+          rsync -rlptz --delete --omit-dir-times \
+            --exclude='.git/' --exclude='.github/' --exclude='.env' --exclude='.env.*' \
+            --exclude='node_modules/' --exclude='vendor/' --exclude='/storage/' \
+            --exclude='/bootstrap/cache/' --exclude='/public/storage' \
+            --exclude='/public/.well-known/' --exclude='/database/*.sqlite*' \
+            --exclude='tests/' --exclude='.DS_Store' \
+            ./ "production:$DEPLOY_PATH/"
+      - name: Instalar dependencias y actualizar Laravel
+        run: ssh production 'bash /var/www/vhosts/portada.info/prensa.portada.info/scripts/deploy-server.sh'
+      - name: Comprobar web
+        run: curl --fail --silent --show-error --retry 3 https://prensa.portada.info/up
+      - name: Limpiar clave temporal
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
