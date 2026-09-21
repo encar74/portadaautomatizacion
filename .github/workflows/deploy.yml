@@ -37,7 +37,7 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           test "$DEPLOY_PATH" = /var/www/vhosts/portada.info/prensa.portada.info || fail 'DEPLOY_PATH falta o no coincide con la carpeta del proyecto (sin barra final).'
           [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ ]] || fail 'SSH_HOST falta o contiene caracteres no válidos; usa solo la IP o el nombre del servidor.'
-          [[ "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]] || fail 'SSH_USER falta o contiene caracteres no válidos; no incluyas espacios ni barras invertidas.'
+          [[ "$SSH_USER" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$ ]] || fail 'SSH_USER falta o contiene caracteres no válidos; no incluyas espacios ni barras invertidas.'
           test -n "$SSH_PRIVATE_KEY" || fail 'Falta el secreto SSH_PRIVATE_KEY.'
           test -n "$SSH_KNOWN_HOSTS" || fail 'Falta el secreto SSH_KNOWN_HOSTS.'
           install -m 700 -d ~/.ssh
