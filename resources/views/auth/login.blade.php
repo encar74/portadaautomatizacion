@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Acceso · Portada Automatización</title><script src="https://cdn.tailwindcss.com"></script><script>tailwind.config={theme:{extend:{colors:{brand:{50:'#fff1f4',100:'#ffe4eb',300:'#e893a8',400:'#d94e70',500:'#bd1b42',600:'#a61538',700:'#89112e',950:'#3c0715'}}}}}</script></head>
+<body class="min-h-full bg-slate-950 font-sans antialiased">
+<main class="relative grid min-h-screen overflow-hidden lg:grid-cols-[1.1fr_.9fr]">
+    <section class="relative hidden overflow-hidden bg-slate-950 p-14 text-white lg:flex lg:flex-col lg:justify-between">
+        <div class="absolute -left-32 top-1/3 h-96 w-96 rounded-full bg-brand-600/25 blur-3xl"></div><div class="absolute -right-20 -top-20 h-80 w-80 rounded-full bg-brand-400/10 blur-3xl"></div>
+        <div class="relative"><div class="inline-block rounded-xl bg-white px-4 py-3 shadow-2xl shadow-black/30"><img src="{{ asset('images/logo-portada.png') }}" alt="Portada.info" class="h-auto w-56"></div><p class="mt-3 text-xs font-medium uppercase tracking-[.18em] text-slate-500">Automatización editorial</p></div>
+        <div class="relative max-w-xl"><div class="mb-7 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-brand-300"><span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span>Flujo editorial inteligente</div><h1 class="text-5xl font-bold leading-[1.08] tracking-tight">De la nota de prensa al borrador, con control editorial.</h1><p class="mt-6 max-w-lg text-lg leading-8 text-slate-400">Centraliza fuentes autorizadas, automatiza el procesamiento y mantén siempre la decisión final en manos del periodista.</p></div>
+        <p class="relative text-xs text-slate-600">Panel interno · Acceso restringido</p>
+    </section>
+    <section class="flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-12">
+        <div class="w-full max-w-md">
+            <div class="mb-10 lg:hidden"><img src="{{ asset('images/logo-portada.png') }}" alt="Portada.info" class="h-auto w-52"><p class="mt-2 text-xs font-medium uppercase tracking-[.16em] text-slate-400">Automatización editorial</p></div>
+            <p class="text-sm font-semibold text-brand-600">Bienvenido de nuevo</p><h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-950">Accede a tu cuenta</h2><p class="mt-3 text-sm leading-6 text-slate-500">Gestiona las fuentes y supervisa la automatización editorial desde un único lugar.</p>
+            @if ($errors->any())<div class="mt-7 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>{{ $errors->first() }}</div>@endif
+            <form method="POST" action="{{ route('login.store') }}" class="mt-8 space-y-5">@csrf
+                <label class="block"><span class="text-sm font-semibold text-slate-700">Correo electrónico</span><div class="relative mt-2"><svg class="pointer-events-none absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M21.75 6.75v10.5A2.25 2.25 0 0 1 19.5 19.5h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0-8.69 5.52a2 2 0 0 1-2.12 0L2.25 6.75"/></svg><input type="email" name="email" value="{{ old('email') }}" autocomplete="email" autofocus required placeholder="nombre@portada.info" class="w-full rounded-xl border border-slate-200 py-3 pl-11 pr-4 outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"></div></label>
+                <label class="block"><span class="text-sm font-semibold text-slate-700">Contraseña</span><div class="relative mt-2"><svg class="pointer-events-none absolute left-3.5 top-3.5 h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M16.5 10.5V6.75a4.5 4.5 0 0 0-9 0v3.75m-.75 0h10.5A2.25 2.25 0 0 1 19.5 12.75v6A2.25 2.25 0 0 1 17.25 21H6.75a2.25 2.25 0 0 1-2.25-2.25v-6a2.25 2.25 0 0 1 2.25-2.25Z"/></svg><input type="password" name="password" autocomplete="current-password" required placeholder="••••••••••••" class="w-full rounded-xl border border-slate-200 py-3 pl-11 pr-4 outline-none transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10"></div></label>
+                <label class="flex cursor-pointer items-center gap-3 text-sm text-slate-600"><input type="checkbox" name="remember" value="1" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"> Mantener la sesión iniciada</label>
+                <button class="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3.5 font-semibold text-white shadow-lg shadow-slate-950/10 transition hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/20">Entrar al dashboard<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m9 18 6-6-6-6"/></svg></button>
+            </form>
+            <p class="mt-8 text-center text-xs leading-5 text-slate-400">Acceso exclusivo para personal autorizado de Portada.info</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>
