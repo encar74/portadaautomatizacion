@@ -13,4 +13,19 @@ enum PressReleaseStatus: string
     case WordPressDraftCreated = 'wordpress_draft_created';
     case Error = 'error';
     case Ignored = 'ignored';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Received => 'Recibido',
+            self::UnmatchedSender => 'Remitente sin identificar',
+            self::Queued => 'En cola',
+            self::Processing => 'Procesando',
+            self::Processed => 'Procesado',
+            self::NeedsReview => 'Pendiente de revisión',
+            self::WordPressDraftCreated => 'Borrador en WordPress',
+            self::Error => 'Error',
+            self::Ignored => 'Ignorado',
+        };
+    }
 }
