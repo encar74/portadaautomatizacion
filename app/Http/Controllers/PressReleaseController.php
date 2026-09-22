@@ -54,6 +54,7 @@ class PressReleaseController extends Controller
     public function download(PressRelease $pressRelease, PressReleaseAttachment $attachment): StreamedResponse
     {
         abort_unless($attachment->press_release_id === $pressRelease->id, 404);
+        abort_if($attachment->is_blocked, 423, 'Este adjunto está bloqueado por seguridad.');
         $disk = Storage::disk(config('press_releases.disk'));
         abort_unless($disk->exists($attachment->storage_path), 404);
 

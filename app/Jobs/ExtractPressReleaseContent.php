@@ -54,8 +54,15 @@ class ExtractPressReleaseContent implements ShouldBeUnique, ShouldQueue
         ]);
 
         try {
-            $service->extract($pressRelease);
-            $pressRelease->update(['processing_status' => PressReleaseStatus::Processed]);
+            $hasBlockedAttachments = $service->extract($pressRelease);
+            $pressRelease->update([
+                'processing_status' => $hasBlockedAttachments
+                    ? PressReleaseStatus::NeedsReview
+                    : PressReleaseStatus::Processed,
+                'error_message' => $hasBlockedAttachments
+                    ? 'Se ha bloqueado al menos un adjunto cifrado. Revisión manual necesaria.'
+                    : null,
+            ]);
         } catch (Throwable $exception) {
             $pressRelease->update([
                 'processing_status' => PressReleaseStatus::Error,

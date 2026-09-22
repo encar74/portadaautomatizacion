@@ -17,6 +17,7 @@ class PressReleaseAttachmentFactory extends Factory
             'stored_filename' => $filename, 'mime_type' => 'application/pdf',
             'extension' => 'pdf', 'size' => 1024, 'attachment_type' => AttachmentType::Document,
             'storage_path' => 'press-releases/'.$filename, 'extracted_text' => null,
+            'is_blocked' => false, 'blocked_reason' => null,
             'width' => null, 'height' => null, 'wordpress_media_id' => null,
         ];
     }

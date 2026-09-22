@@ -61,4 +61,19 @@ class PressReleaseBrowsingTest extends TestCase
         Storage::disk('mail-test')->delete($attachment->storage_path);
         $this->get($url)->assertNotFound();
     }
+
+    public function test_blocked_attachment_cannot_be_downloaded(): void
+    {
+        Storage::fake('mail-test');
+        config(['press_releases.disk' => 'mail-test']);
+        $attachment = PressReleaseAttachment::factory()->create([
+            'is_blocked' => true,
+            'blocked_reason' => 'PDF cifrado o protegido con contraseña.',
+        ]);
+        Storage::disk('mail-test')->put($attachment->storage_path, 'encrypted contents');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('press-releases.attachments.download', [$attachment->press_release_id, $attachment]))
+            ->assertStatus(423);
+    }
 }

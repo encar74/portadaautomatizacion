@@ -76,6 +76,25 @@ class PressReleaseContentExtractionTest extends TestCase
         $this->assertStringContainsString('Texto extraido del PDF', $release->fresh()->source_text);
     }
 
+    public function test_encrypted_pdf_is_blocked_and_requires_review_without_being_parsed(): void
+    {
+        $release = PressRelease::factory()->create(['processing_status' => PressReleaseStatus::Queued]);
+        $attachment = $this->attachment($release, 'protegido.pdf', 'pdf');
+        Storage::disk('local')->put($attachment->storage_path, $this->pdf('Contenido oculto', encrypted: true));
+
+        (new ExtractPressReleaseContent($release->id))->handle(app(PressReleaseContentExtractionService::class));
+
+        $release->refresh();
+        $attachment->refresh();
+        $this->assertSame(PressReleaseStatus::NeedsReview, $release->processing_status);
+        $this->assertTrue($attachment->is_blocked);
+        $this->assertSame('PDF cifrado o protegido con contraseña.', $attachment->blocked_reason);
+        $this->assertNull($attachment->extracted_text);
+        $this->assertStringContainsString('[BLOCKED_ATTACHMENT filename="protegido.pdf"]', $release->source_text);
+        $this->assertStringNotContainsString('Contenido oculto', $release->source_text);
+        Storage::disk('local')->assertExists($attachment->storage_path);
+    }
+
     public function test_job_is_idempotent_after_success(): void
     {
         $extractedAt = now()->subHour();
@@ -165,7 +184,7 @@ class PressReleaseContentExtractionTest extends TestCase
         return $contents;
     }
 
-    private function pdf(string $text): string
+    private function pdf(string $text, bool $encrypted = false): string
     {
         $objects = [
             '<< /Type /Catalog /Pages 2 0 R >>',
@@ -189,6 +208,8 @@ class PressReleaseContentExtractionTest extends TestCase
             $pdf .= sprintf("%010d 00000 n \n", $offset);
         }
 
-        return $pdf."trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xref}\n%%EOF";
+        $encryption = $encrypted ? ' /Encrypt 6 0 R' : '';
+
+        return $pdf."trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R{$encryption} >>\nstartxref\n{$xref}\n%%EOF";
     }
 }

@@ -15,7 +15,9 @@ class PressReleaseSourceBuilder
         ];
 
         foreach ($pressRelease->attachments as $attachment) {
-            if (filled($attachment->extracted_text)) {
+            if ($attachment->is_blocked) {
+                $sections[] = "[BLOCKED_ATTACHMENT filename=\"{$attachment->original_filename}\"]\n{$attachment->blocked_reason}";
+            } elseif (filled($attachment->extracted_text)) {
                 $sections[] = "[ATTACHMENT filename=\"{$attachment->original_filename}\"]\n{$attachment->extracted_text}";
             }
         }

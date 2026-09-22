@@ -19,7 +19,7 @@ class PressReleaseAttachment extends Model
     {
         return [
             'attachment_type' => AttachmentType::class,
-            'size' => 'integer', 'width' => 'integer', 'height' => 'integer',
+            'size' => 'integer', 'width' => 'integer', 'height' => 'integer', 'is_blocked' => 'boolean',
             'wordpress_media_id' => 'integer',
         ];
     }

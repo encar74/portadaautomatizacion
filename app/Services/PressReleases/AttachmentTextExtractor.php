@@ -2,6 +2,7 @@
 
 namespace App\Services\PressReleases;
 
+use App\Exceptions\BlockedPressReleaseAttachment;
 use App\Exceptions\PressReleaseExtractionException;
 use App\Models\PressReleaseAttachment;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -23,10 +24,15 @@ class AttachmentTextExtractor
 
         try {
             $contents = $this->disk()->get($attachment->storage_path);
+            if ($attachment->extension === 'pdf' && $this->isEncryptedPdf($contents)) {
+                throw new BlockedPressReleaseAttachment('PDF cifrado o protegido con contraseña.');
+            }
             $text = match ($attachment->extension) {
                 'pdf' => $this->pdfParser->parseContent($contents)->getText(),
                 'docx' => $this->extractDocx($contents),
             };
+        } catch (BlockedPressReleaseAttachment $exception) {
+            throw $exception;
         } catch (Throwable $exception) {
             throw new PressReleaseExtractionException(
                 "No se pudo extraer el texto de {$attachment->original_filename}.",
@@ -35,6 +41,11 @@ class AttachmentTextExtractor
         }
 
         return $this->normalizeAndLimit($text);
+    }
+
+    private function isEncryptedPdf(string $contents): bool
+    {
+        return preg_match('/\/Encrypt\s+(?:\d+\s+\d+\s+R|<<)/i', $contents) === 1;
     }
 
     private function extractDocx(string $contents): string
