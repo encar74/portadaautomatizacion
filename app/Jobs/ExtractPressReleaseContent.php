@@ -63,6 +63,10 @@ class ExtractPressReleaseContent implements ShouldBeUnique, ShouldQueue
                     ? 'Se ha bloqueado al menos un adjunto cifrado. Revisión manual necesaria.'
                     : null,
             ]);
+
+            if (! $hasBlockedAttachments && config('ai.generation_enabled')) {
+                GenerateArticle::dispatch($pressRelease->id);
+            }
         } catch (Throwable $exception) {
             $pressRelease->update([
                 'processing_status' => PressReleaseStatus::Error,

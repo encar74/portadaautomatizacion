@@ -28,6 +28,24 @@
         </details>
     </section>
 @endif
+@if ($pressRelease->generatedArticle)
+    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-lg font-semibold">Noticia generada</h2>
+            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Pendiente de validación</span>
+        </div>
+        <h3 class="mt-5 text-2xl font-bold tracking-tight">{{ $pressRelease->generatedArticle->headline }}</h3>
+        @if ($pressRelease->generatedArticle->subheadline)<p class="mt-2 text-lg text-slate-600">{{ $pressRelease->generatedArticle->subheadline }}</p>@endif
+        <p class="mt-5 font-semibold leading-7 text-slate-800">{{ $pressRelease->generatedArticle->lead }}</p>
+        <div class="mt-5 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{{ $pressRelease->generatedArticle->body }}</div>
+        <dl class="mt-6 grid gap-4 rounded-xl bg-slate-50 p-4 text-sm sm:grid-cols-2">
+            <div><dt class="text-slate-500">Título SEO</dt><dd class="mt-1 font-medium">{{ $pressRelease->generatedArticle->seo_title }}</dd></div>
+            <div><dt class="text-slate-500">Categoría sugerida</dt><dd class="mt-1 font-medium">{{ $pressRelease->generatedArticle->suggested_category ?: 'Sin sugerencia' }}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-slate-500">Descripción SEO</dt><dd class="mt-1">{{ $pressRelease->generatedArticle->seo_description }}</dd></div>
+            <div class="sm:col-span-2"><dt class="text-slate-500">Etiquetas sugeridas</dt><dd class="mt-1">{{ implode(', ', $pressRelease->generatedArticle->suggested_tags ?? []) ?: 'Sin sugerencias' }}</dd></div>
+        </dl>
+    </section>
+@endif
 <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
     <h2 class="text-lg font-semibold">Adjuntos ({{ $pressRelease->attachments->count() }})</h2>
     <ul class="mt-4 divide-y divide-slate-100">

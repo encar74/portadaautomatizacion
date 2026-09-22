@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\AttachmentType;
 use App\Enums\PressReleaseStatus;
 use App\Jobs\ExtractPressReleaseContent;
+use App\Jobs\GenerateArticle;
 use App\Models\PressRelease;
 use App\Models\PressReleaseAttachment;
 use App\Models\PressSource;
@@ -148,6 +149,20 @@ class PressReleaseContentExtractionTest extends TestCase
         Queue::assertPushed(
             ExtractPressReleaseContent::class,
             fn (ExtractPressReleaseContent $job) => $job->pressReleaseId === $pending->id,
+        );
+    }
+
+    public function test_successful_extraction_dispatches_generation_only_when_enabled(): void
+    {
+        Queue::fake();
+        config()->set('ai.generation_enabled', true);
+        $release = PressRelease::factory()->create(['processing_status' => PressReleaseStatus::Queued]);
+
+        (new ExtractPressReleaseContent($release->id))->handle(app(PressReleaseContentExtractionService::class));
+
+        Queue::assertPushed(
+            GenerateArticle::class,
+            fn (GenerateArticle $job) => $job->pressReleaseId === $release->id,
         );
     }
 
