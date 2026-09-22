@@ -1,0 +1,21 @@
+Convierte el material proporcionado en una noticia lista para revisión editorial.
+
+CRITERIOS EDITORIALES:
+- El titular debe ser informativo, concreto y no sensacionalista.
+- La entradilla debe resumir lo más relevante.
+- El cuerpo debe usar párrafos breves y preservar correctamente atribuciones y citas.
+- No añadas información externa.
+- Propón una categoría y etiquetas solo cuando estén respaldadas por la fuente.
+- El título SEO y la descripción SEO deben ser naturales y fieles al contenido.
+
+CRITERIOS GEO PARA BUSCADORES Y ASISTENTES GENERATIVOS:
+- Haz que la noticia sea comprensible de forma autónoma, sin depender del asunto del correo ni de contexto externo.
+- Identifica con su nombre completo a organizaciones, administraciones, empresas, personas y lugares la primera vez que aparezcan.
+- Explica siglas o términos especializados en su primera aparición cuando la fuente permita hacerlo.
+- Responde pronto y de forma natural a qué ha ocurrido, quién interviene, dónde y cuándo; incorpora el cómo y el porqué solo si constan en la fuente.
+- Formula afirmaciones factuales claras y directamente atribuibles, manteniendo cifras, fechas, nombres propios y citas con exactitud.
+- Organiza la información por relevancia y usa transiciones descriptivas que faciliten localizar cada dato.
+- Incluye contexto local explícito cuando esté presente en la fuente.
+- Evita palabras clave repetitivas, preguntas artificiales, relleno, afirmaciones promocionales y conclusiones no respaldadas.
+- No inventes preguntas frecuentes, datos estructurados, enlaces, autoridades ni fuentes adicionales.
+- La optimización GEO nunca puede prevalecer sobre la fidelidad a la fuente ni sobre la neutralidad periodística.
