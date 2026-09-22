@@ -57,3 +57,28 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+
+## obtenemos nuevos correos 
+php artisan press-releases:fetch --limit=5 
+
+## si ya tenemos los correos descargados
+php artisan press-releases:queue-extraction
+
+
+## los procesamos
+php artisan queue:work --stop-when-empty --tries=3 --timeout=120 
+
+
+## IMPORTANTE PARA PRODUCCIÓN 
+## Debe mantenerse activo un worker de Laravel:
+php artisan queue:work --queue=default --tries=3 --timeout=120
+
+
+Fase 3: extracción PDF/DOCX y construcción del contenido fuente.
+Fase 4: abstracción de IA, prompts versionados y generación de la noticia.
+## AI_GENERATION_ENABLED=true para que vaya todo a la vez
+
+Fase 5: validación factual y cálculo de riesgo.
+Fase 6: integración con WordPress, siempre creando borradores e impidiendo duplicados.
+Fase 7: automatización completa con Scheduler, colas, reintentos y controles del dashboard.
