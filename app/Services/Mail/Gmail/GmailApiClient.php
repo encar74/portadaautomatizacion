@@ -14,10 +14,10 @@ class GmailApiClient
 
     private ?string $labelId = null;
 
-    public function listMessages(): array
+    public function listMessages(?string $query = null): array
     {
         $response = $this->request()->get($this->userUrl('/messages'), [
-            'q' => config('mail_ingestion.gmail.query'),
+            'q' => $query ?? config('mail_ingestion.gmail.query'),
             'maxResults' => min(max(config('mail_ingestion.gmail.max_results'), 1), 500),
             'includeSpamTrash' => false,
         ])->throw();

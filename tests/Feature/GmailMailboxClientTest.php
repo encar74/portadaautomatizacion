@@ -2,14 +2,19 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\MailboxClientInterface;
+use App\Models\PressSource;
 use App\Services\Mail\Gmail\GmailApiClient;
 use App\Services\Mail\Gmail\GmailMailboxClient;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class GmailMailboxClientTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -26,6 +31,7 @@ class GmailMailboxClientTest extends TestCase
 
     public function test_it_fetches_maps_and_labels_a_gmail_message(): void
     {
+        PressSource::factory()->create(['email' => 'prensa@example.com']);
         Http::fake(function (Request $request) {
             $url = $request->url();
 
@@ -58,6 +64,9 @@ class GmailMailboxClientTest extends TestCase
 
         $client->markImported($message->messageId);
 
+        Http::assertSent(fn (Request $request) => str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/messages')
+            && $request['q'] === '(in:inbox -label:portada-importado) {from:"prensa@example.com"}');
+
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/messages/gmail-1/modify')
             && $request['addLabelIds'] === ['Label_42']
             && $request->hasHeader('Authorization', 'Bearer access-token'));
@@ -82,6 +91,64 @@ class GmailMailboxClientTest extends TestCase
         Http::assertSent(fn (Request $request) => $request->method() === 'POST'
             && str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/labels')
             && $request['name'] === 'portada-importado');
+    }
+
+    public function test_it_does_not_contact_gmail_without_active_sources(): void
+    {
+        Http::fake();
+        PressSource::factory()->inactive()->create();
+
+        $this->assertSame([], iterator_to_array(app(GmailMailboxClient::class)->messages()));
+        Http::assertNothingSent();
+    }
+
+    public function test_query_includes_active_email_and_domain_sources_only(): void
+    {
+        PressSource::factory()->create(['email' => 'comunicacion@villena.es']);
+        PressSource::factory()->forDomain('agency.example')->create();
+        PressSource::factory()->inactive()->create(['email' => 'inactive@example.com']);
+        config(['mail_ingestion.gmail.query' => 'in:inbox OR is:starred']);
+        Http::fake([
+            'https://oauth2.googleapis.com/token' => Http::response(['access_token' => 'test']),
+            'https://gmail.googleapis.com/*' => Http::response(['messages' => []]),
+        ]);
+
+        iterator_to_array(app(GmailMailboxClient::class)->messages());
+
+        Http::assertSent(fn (Request $request) => isset($request['q'])
+            && str_starts_with($request['q'], '(in:inbox OR is:starred) {')
+            && str_contains($request['q'], 'from:"comunicacion@villena.es"')
+            && str_contains($request['q'], 'from:"agency.example"')
+            && ! str_contains($request['q'], 'inactive@example.com'));
+    }
+
+    public function test_messages_not_matching_a_source_are_not_imported_or_labeled(): void
+    {
+        PressSource::factory()->create(['email' => 'comunicacion@villena.es']);
+        config(['mail_ingestion.provider' => 'gmail']);
+        app()->bind(MailboxClientInterface::class, GmailMailboxClient::class);
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response(['access_token' => 'test']);
+            }
+            if (str_contains($request->url(), 'format=full')) {
+                $message = $this->fullMessage();
+                $message['payload']['parts'] = [];
+
+                return Http::response($message);
+            }
+            if (str_contains($request->url(), 'format=raw')) {
+                return Http::response(['raw' => $this->base64Url('RAW EMAIL')]);
+            }
+
+            return Http::response(['messages' => [['id' => 'gmail-1']]]);
+        });
+
+        $this->artisan('press-releases:fetch', ['--limit' => 5])
+            ->expectsOutput('Importación terminada: 0 nuevos, 0 duplicados, 0 errores.')
+            ->assertSuccessful();
+        $this->assertDatabaseCount('press_releases', 0);
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/modify'));
     }
 
     private function fullMessage(): array
