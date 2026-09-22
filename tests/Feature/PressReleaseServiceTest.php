@@ -8,10 +8,12 @@ use App\DTOs\PressReleaseSourceData;
 use App\Enums\PressReleaseStatus;
 use App\Enums\ProcessingMode;
 use App\Exceptions\InvalidPressReleaseAttachment;
+use App\Jobs\ExtractPressReleaseContent;
 use App\Models\PressSource;
 use App\Services\PressReleases\PressReleaseService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use Tests\TestCase;
@@ -26,6 +28,7 @@ class PressReleaseServiceTest extends TestCase
     {
         parent::setUp();
         Storage::fake('local');
+        Queue::fake();
         config()->set('press_releases.disk', 'local');
         $this->service = app(PressReleaseService::class);
     }
@@ -52,9 +55,9 @@ class PressReleaseServiceTest extends TestCase
     public function test_active_source_modes_determine_initial_status(): void
     {
         foreach ([
-            ProcessingMode::Automatic->value => PressReleaseStatus::Received,
-            ProcessingMode::ProcessOnly->value => PressReleaseStatus::Received,
-            ProcessingMode::Review->value => PressReleaseStatus::Received,
+            ProcessingMode::Automatic->value => PressReleaseStatus::Queued,
+            ProcessingMode::ProcessOnly->value => PressReleaseStatus::Queued,
+            ProcessingMode::Review->value => PressReleaseStatus::Queued,
             ProcessingMode::Ignore->value => PressReleaseStatus::Ignored,
         ] as $mode => $status) {
             $source = PressSource::factory()->create([
@@ -70,6 +73,8 @@ class PressReleaseServiceTest extends TestCase
             $this->assertTrue($result->pressRelease->pressSource->is($source));
             $this->assertSame($status, $result->pressRelease->processing_status);
         }
+
+        Queue::assertPushed(ExtractPressReleaseContent::class, 3);
     }
 
     public function test_inactive_source_is_treated_as_unmatched(): void
@@ -175,6 +180,8 @@ class PressReleaseServiceTest extends TestCase
 
     public function test_fetch_command_fails_cleanly_without_a_mailbox_adapter(): void
     {
+        app()->offsetUnset(MailboxClientInterface::class);
+
         $this->artisan('press-releases:fetch')
             ->expectsOutput('No hay ningún proveedor de correo configurado para MailboxClientInterface.')
             ->assertFailed();

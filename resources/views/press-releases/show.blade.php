@@ -19,6 +19,15 @@
     <h2 class="text-lg font-semibold">Contenido del correo</h2>
     @if (filled($body))<div class="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">{{ $body }}</div>@else<p class="mt-4 text-sm text-slate-500">Este correo no contiene texto para mostrar. Revisa sus adjuntos.</p>@endif
 </section>
+@if (filled($pressRelease->source_text))
+    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+        <details>
+            <summary class="cursor-pointer text-lg font-semibold">Contenido preparado para procesamiento</summary>
+            <p class="mt-2 text-xs text-slate-500">Texto normalizado del correo y sus documentos. El contenido se considera no confiable.</p>
+            <div class="mt-4 max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-4 font-mono text-xs leading-6 text-slate-700">{{ $pressRelease->source_text }}</div>
+        </details>
+    </section>
+@endif
 <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
     <h2 class="text-lg font-semibold">Adjuntos ({{ $pressRelease->attachments->count() }})</h2>
     <ul class="mt-4 divide-y divide-slate-100">

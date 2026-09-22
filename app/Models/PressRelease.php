@@ -19,7 +19,11 @@ class PressRelease extends Model
 
     protected function casts(): array
     {
-        return ['received_at' => 'datetime', 'processing_status' => PressReleaseStatus::class];
+        return [
+            'received_at' => 'datetime',
+            'content_extracted_at' => 'datetime',
+            'processing_status' => PressReleaseStatus::class,
+        ];
     }
 
     public function pressSource(): BelongsTo

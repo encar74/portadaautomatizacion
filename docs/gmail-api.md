@@ -41,12 +41,33 @@ php artisan press-releases:fetch --limit=50
 
 ## Comportamiento
 
-- Gmail devuelve primero los IDs que coinciden con `GMAIL_QUERY`.
+- Gmail devuelve los IDs que coinciden con `GMAIL_QUERY` y con las fuentes activas configuradas. Sin fuentes activas no se consulta Gmail.
+- Se comprueba también que el remitente coincide exactamente con una fuente activa antes de importar.
 - La aplicación descarga el payload MIME estructurado y el mensaje RFC completo.
 - El mensaje se persiste mediante `PressReleaseService`.
 - Solo después de persistirlo correctamente se añade `GMAIL_IMPORTED_LABEL`.
 - Si la etiqueta aún no existe, la aplicación la crea.
 - Los mensajes fallidos no se etiquetan y podrán reintentarse.
+
+## Importación programada en Plesk
+
+`routes/console.php` programa `press-releases:fetch --limit=50` cada cinco minutos. El bloqueo `withoutOverlapping()` evita solapar ejecuciones del programador (no bloquea ejecuciones manuales directas). Usa una caché persistente, como `database` o `file`, compartida entre procesos. El bloqueo caduca a las 24 horas si el proceso termina abruptamente; tras comprobar que no queda ninguna importación en marcha, se puede liberar con `php artisan schedule:clear-cache`.
+
+La salida se añade a `storage/logs/press-releases-fetch.log`; los errores reportados por Laravel también se registran según su configuración de logging. Configura la rotación del archivo de salida en el servidor.
+
+Después de desplegar, comprueba la programación con `php artisan schedule:list`.
+
+En Plesk, añade una sola tarea programada bajo el usuario del alojamiento, de tipo **Ejecutar un comando**, con frecuencia estilo cron `* * * * *`. Laravel decidirá qué minutos ejecutar la importación.
+
+Obtén la ruta de PHP con `command -v php` en la terminal donde funciona la importación. Sustituye `/RUTA/ABSOLUTA/PHP` por ese resultado:
+
+```bash
+cd /var/www/vhosts/portada.info/prensa.portada.info && /RUTA/ABSOLUTA/PHP artisan schedule:run
+```
+
+Este comando presupone una shell sin chroot. Si Plesk ejecuta las tareas en chroot, configura la shell de tareas de la suscripción adecuadamente o adapta las rutas a ese entorno. No uses el usuario root para la tarea. Comprueba el comando con **Ejecutar ahora**; en minutos no múltiplos de cinco es normal que indique que no hay tareas pendientes.
+
+No añadas además otra tarea que ejecute directamente `press-releases:fetch`, pues duplicaría la programación.
 
 Documentación oficial:
 

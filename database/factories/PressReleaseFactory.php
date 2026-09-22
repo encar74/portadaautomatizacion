@@ -14,6 +14,7 @@ class PressReleaseFactory extends Factory
             'sender_email' => fake()->safeEmail(), 'sender_name' => fake()->name(),
             'subject' => fake()->sentence(), 'received_at' => fake()->dateTimeBetween('-1 month'),
             'body_text' => fake()->paragraphs(2, true), 'body_html' => null,
+            'source_text' => null, 'content_extracted_at' => null,
             'classification' => null, 'processing_status' => PressReleaseStatus::Received,
             'error_message' => null,
         ];

@@ -6,6 +6,7 @@ use App\DTOs\PressReleaseIngestionResult;
 use App\DTOs\PressReleaseSourceData;
 use App\Enums\PressReleaseStatus;
 use App\Enums\ProcessingMode;
+use App\Jobs\ExtractPressReleaseContent;
 use App\Models\PressRelease;
 use App\Services\PressSources\PressSourceMatcher;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -77,7 +78,12 @@ class PressReleaseService
             throw $exception;
         }
 
-        return new PressReleaseIngestionResult($pressRelease, true);
+        if ($pressRelease->processing_status === PressReleaseStatus::Received) {
+            $pressRelease->update(['processing_status' => PressReleaseStatus::Queued]);
+            ExtractPressReleaseContent::dispatch($pressRelease->id)->afterCommit();
+        }
+
+        return new PressReleaseIngestionResult($pressRelease->refresh(), true);
     }
 
     private function validate(PressReleaseSourceData $data): void
