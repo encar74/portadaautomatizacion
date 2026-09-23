@@ -16,18 +16,26 @@
     <div class="border-b border-slate-100 px-6 py-4"><h2 class="font-semibold">{{ $releases->total() }} correos encontrados</h2></div>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-6 py-4">Asunto y remitente</th><th class="px-6 py-4">Recibido</th><th class="px-6 py-4">Fuente</th><th class="px-6 py-4">Estado</th><th class="px-6 py-4">Adjuntos</th></tr></thead>
+            <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th class="px-6 py-4">Asunto y remitente</th><th class="px-6 py-4">Recibido</th><th class="px-6 py-4">Fuente</th><th class="px-6 py-4">Artículo</th><th class="px-6 py-4">Estado</th><th class="px-6 py-4">Adjuntos</th></tr></thead>
             <tbody class="divide-y divide-slate-100">
             @forelse ($releases as $release)
                 <tr class="hover:bg-slate-50">
                     <td class="max-w-md px-6 py-4"><a href="{{ route('press-releases.show', $release) }}" class="break-words font-semibold text-brand-600 hover:underline">{{ $release->subject }}</a><p class="mt-1 break-words text-slate-500">{{ $release->sender_name }} &lt;{{ $release->sender_email }}&gt;</p></td>
                     <td class="whitespace-nowrap px-6 py-4 text-slate-600">{{ $release->received_at?->format('d/m/Y H:i') }}</td>
                     <td class="px-6 py-4 text-slate-600">{{ $release->pressSource?->name ?? 'Sin fuente asociada' }}</td>
+                    <td class="px-6 py-4">
+                        @if ($release->generatedArticle)
+                            <a href="{{ route('press-releases.show', $release) }}#articulo" class="font-semibold text-brand-600 hover:underline">Ver artículo</a>
+                            <p class="mt-1 text-xs {{ $release->generatedArticle->validation_risk?->value === 'high' ? 'text-red-700' : 'text-slate-500' }}">{{ $release->generatedArticle->validation_risk?->label() ?? 'Validación pendiente' }}</p>
+                        @else
+                            <span class="text-slate-400">Sin generar</span>
+                        @endif
+                    </td>
                     <td class="px-6 py-4"><span class="inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-medium">{{ $release->processing_status->label() }}</span></td>
                     <td class="px-6 py-4 text-slate-600">{{ $release->attachments_count }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5" class="px-6 py-16 text-center text-slate-500">No hay correos que mostrar con estos filtros.</td></tr>
+                <tr><td colspan="6" class="px-6 py-16 text-center text-slate-500">No hay correos que mostrar con estos filtros.</td></tr>
             @endforelse
             </tbody>
         </table>

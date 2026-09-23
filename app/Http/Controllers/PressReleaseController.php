@@ -19,7 +19,9 @@ class PressReleaseController extends Controller
             'q' => ['nullable', 'string', 'max:200'],
             'status' => ['nullable', Rule::enum(PressReleaseStatus::class)],
         ]);
-        $query = PressRelease::query()->with('pressSource')->withCount('attachments');
+        $query = PressRelease::query()
+            ->with(['pressSource', 'generatedArticle:id,press_release_id,headline,validation_risk'])
+            ->withCount('attachments');
         if ($search = trim($filters['q'] ?? '')) {
             $query->where(function ($query) use ($search) {
                 $query->where('subject', 'like', "%{$search}%")

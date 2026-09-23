@@ -29,7 +29,7 @@
     </section>
 @endif
 @if ($pressRelease->generatedArticle)
-    <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
+    <section id="articulo" class="mt-6 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-lg font-semibold">Noticia generada</h2>
             @if ($pressRelease->generatedArticle->validation_risk)

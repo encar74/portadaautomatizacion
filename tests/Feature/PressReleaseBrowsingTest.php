@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\PressReleaseStatus;
+use App\Models\GeneratedArticle;
 use App\Models\PressRelease;
 use App\Models\PressReleaseAttachment;
 use App\Models\User;
@@ -45,6 +46,18 @@ class PressReleaseBrowsingTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('press-releases.show', $release))
             ->assertOk()->assertSee('Contenido del boletín')->assertSee('&lt;script&gt;texto&lt;/script&gt;', false)
             ->assertDontSee('alert("unsafe")', false)->assertDontSee('https://example.com/tracker', false);
+    }
+
+    public function test_list_shows_when_an_email_has_a_generated_article(): void
+    {
+        $release = PressRelease::factory()->create();
+        GeneratedArticle::factory()->for($release)->create(['headline' => 'Noticia generada']);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('press-releases.index'))
+            ->assertOk()
+            ->assertSee('Ver artículo')
+            ->assertSee('Riesgo bajo');
     }
 
     public function test_download_requires_matching_email_and_existing_file(): void

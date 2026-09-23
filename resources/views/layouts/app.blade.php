@@ -16,8 +16,12 @@
         </div>
         <nav class="flex-1 px-4 py-6">
             <p class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[.16em] text-slate-500">Contenido</p>
-            <a href="{{ route('press-releases.index') }}" @if(request()->routeIs('press-releases.*')) aria-current="page" @endif class="mb-6 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium {{ request()->routeIs('press-releases.*') ? 'bg-white/10 ring-1 ring-white/10' : 'text-slate-300 hover:bg-white/5' }}">
+            <a href="{{ route('press-releases.index') }}" @if(request()->routeIs('press-releases.*')) aria-current="page" @endif class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium {{ request()->routeIs('press-releases.*') ? 'bg-white/10 ring-1 ring-white/10' : 'text-slate-300 hover:bg-white/5' }}">
                 <span aria-hidden="true" class="text-brand-500">✉</span> Correos recibidos
+            </a>
+            <a href="{{ route('generated-articles.index') }}" @if(request()->routeIs('generated-articles.*')) aria-current="page" @endif class="mb-6 mt-1 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium {{ request()->routeIs('generated-articles.*') ? 'bg-white/10 ring-1 ring-white/10' : 'text-slate-300 hover:bg-white/5' }}">
+                <svg class="h-5 w-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5V6.375A3.375 3.375 0 0 0 11.25 3H8.625m6 11.25v4.125c0 .621-.504 1.125-1.125 1.125h-9A1.125 1.125 0 0 1 3.375 18.375V7.5c0-.621.504-1.125 1.125-1.125h4.125m6 7.875h4.875m-4.875 0a3.375 3.375 0 0 1-3.375-3.375V6.375m8.25 7.875v4.125c0 .621-.504 1.125-1.125 1.125H13.5"/></svg>
+                Artículos
             </a>
             <p class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[.16em] text-slate-500">Configuración</p>
             <a href="{{ route('press-sources.index') }}" @if(request()->routeIs('press-sources.*')) aria-current="page" @endif class="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium {{ request()->routeIs('press-sources.*') ? 'bg-white/10 ring-1 ring-white/10' : 'text-slate-300 hover:bg-white/5' }}">
@@ -40,6 +44,7 @@
         </header>
         <nav aria-label="Secciones" class="flex gap-4 border-b border-slate-200 bg-white px-4 py-3 text-sm lg:hidden">
             <a href="{{ route('press-releases.index') }}" class="{{ request()->routeIs('press-releases.*') ? 'font-semibold text-brand-600' : 'text-slate-600' }}">Correos recibidos</a>
+            <a href="{{ route('generated-articles.index') }}" class="{{ request()->routeIs('generated-articles.*') ? 'font-semibold text-brand-600' : 'text-slate-600' }}">Artículos</a>
             <a href="{{ route('press-sources.index') }}" class="{{ request()->routeIs('press-sources.*') ? 'font-semibold text-brand-600' : 'text-slate-600' }}">Fuentes de prensa</a>
         </nav>
         <main class="mx-auto max-w-7xl px-4 py-7 sm:px-6 md:px-8 lg:py-10">
