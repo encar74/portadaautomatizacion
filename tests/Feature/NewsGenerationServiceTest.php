@@ -4,14 +4,20 @@ namespace Tests\Feature;
 
 use App\Contracts\AIProviderInterface;
 use App\DTOs\AIArticleGenerationRequest;
+use App\DTOs\AIArticleValidationRequest;
 use App\DTOs\AIProviderResponse;
+use App\DTOs\AIValidationProviderResponse;
 use App\DTOs\GeneratedArticleData;
 use App\Enums\AIExecutionStatus;
 use App\Enums\ArticleVersionOrigin;
 use App\Enums\PressReleaseStatus;
+use App\Jobs\GenerateArticle;
+use App\Jobs\ValidateArticle;
+use App\Models\GeneratedArticle;
 use App\Models\PressRelease;
 use App\Services\AI\NewsGenerationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -50,6 +56,11 @@ class NewsGenerationServiceTest extends TestCase
                     outputTokens: 80,
                     totalTokens: 200,
                 );
+            }
+
+            public function validateArticle(AIArticleValidationRequest $request): AIValidationProviderResponse
+            {
+                throw new RuntimeException('No utilizado.');
             }
 
             public function name(): string
@@ -92,6 +103,11 @@ class NewsGenerationServiceTest extends TestCase
                 throw new RuntimeException('Proveedor no disponible.');
             }
 
+            public function validateArticle(AIArticleValidationRequest $request): AIValidationProviderResponse
+            {
+                throw new RuntimeException('No utilizado.');
+            }
+
             public function name(): string
             {
                 return 'fake';
@@ -114,5 +130,27 @@ class NewsGenerationServiceTest extends TestCase
         $execution = $release->aiExecutions()->sole();
         $this->assertSame(AIExecutionStatus::Failed, $execution->status);
         $this->assertSame('Proveedor no disponible.', $execution->error_message);
+    }
+
+    public function test_generation_job_dispatches_validation_when_enabled(): void
+    {
+        Queue::fake();
+        config()->set('ai.validation_enabled', true);
+        $release = PressRelease::factory()->create([
+            'processing_status' => PressReleaseStatus::Processed,
+            'source_text' => 'Texto fuente',
+            'content_extracted_at' => now(),
+        ]);
+        $article = GeneratedArticle::factory()->create([
+            'press_release_id' => $release->id,
+            'validation_risk' => null,
+        ]);
+
+        (new GenerateArticle($release->id))->handle(app(NewsGenerationService::class));
+
+        Queue::assertPushed(
+            ValidateArticle::class,
+            fn (ValidateArticle $job) => $job->generatedArticleId === $article->id,
+        );
     }
 }

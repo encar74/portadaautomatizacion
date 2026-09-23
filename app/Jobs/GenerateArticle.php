@@ -40,11 +40,11 @@ class GenerateArticle implements ShouldBeUnique, ShouldQueue
     public function handle(NewsGenerationService $service): void
     {
         $pressRelease = PressRelease::query()->with('generatedArticle')->findOrFail($this->pressReleaseId);
-        if ($pressRelease->generatedArticle !== null) {
-            return;
-        }
+        $article = $pressRelease->generatedArticle ?? $service->generate($pressRelease);
 
-        $service->generate($pressRelease);
+        if (config('ai.validation_enabled') && $article->validation_risk === null) {
+            ValidateArticle::dispatch($article->id);
+        }
     }
 
     public function failed(?Throwable $exception): void

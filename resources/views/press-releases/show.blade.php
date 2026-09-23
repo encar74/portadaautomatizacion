@@ -32,7 +32,16 @@
     <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-lg font-semibold">Noticia generada</h2>
-            <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Pendiente de validación</span>
+            @if ($pressRelease->generatedArticle->validation_risk)
+                <span @class([
+                    'rounded-full px-3 py-1 text-xs font-semibold',
+                    'bg-emerald-50 text-emerald-800' => $pressRelease->generatedArticle->validation_risk->value === 'low',
+                    'bg-amber-50 text-amber-800' => $pressRelease->generatedArticle->validation_risk->value === 'medium',
+                    'bg-red-50 text-red-800' => $pressRelease->generatedArticle->validation_risk->value === 'high',
+                ])>{{ $pressRelease->generatedArticle->validation_risk->label() }}</span>
+            @else
+                <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Pendiente de validación</span>
+            @endif
         </div>
         <h3 class="mt-5 text-2xl font-bold tracking-tight">{{ $pressRelease->generatedArticle->headline }}</h3>
         @if ($pressRelease->generatedArticle->subheadline)<p class="mt-2 text-lg text-slate-600">{{ $pressRelease->generatedArticle->subheadline }}</p>@endif
@@ -44,6 +53,24 @@
             <div class="sm:col-span-2"><dt class="text-slate-500">Descripción SEO</dt><dd class="mt-1">{{ $pressRelease->generatedArticle->seo_description }}</dd></div>
             <div class="sm:col-span-2"><dt class="text-slate-500">Etiquetas sugeridas</dt><dd class="mt-1">{{ implode(', ', $pressRelease->generatedArticle->suggested_tags ?? []) ?: 'Sin sugerencias' }}</dd></div>
         </dl>
+        @if ($pressRelease->generatedArticle->validation_issues)
+            <div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
+                <h4 class="font-semibold text-red-900">Incidencias factuales</h4>
+                <ul class="mt-3 space-y-3 text-sm text-red-900">
+                    @foreach ($pressRelease->generatedArticle->validation_issues as $issue)
+                        <li><span class="font-semibold">{{ $issue['claim'] }}</span><br>{{ $issue['explanation'] }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+        @if ($pressRelease->generatedArticle->warnings)
+            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <h4 class="font-semibold text-amber-900">Advertencias editoriales</h4>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                    @foreach ($pressRelease->generatedArticle->warnings as $warning)<li>{{ $warning }}</li>@endforeach
+                </ul>
+            </div>
+        @endif
     </section>
 @endif
 <section class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-soft">
