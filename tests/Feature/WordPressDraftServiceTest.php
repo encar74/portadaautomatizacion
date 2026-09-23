@@ -85,6 +85,39 @@ class WordPressDraftServiceTest extends TestCase
             && $request['title'] === 'Titular actualizado');
     }
 
+    public function test_it_reuses_term_id_when_wordpress_reports_term_exists(): void
+    {
+        config()->set('wordpress.upload_images', false);
+        $article = $this->automaticArticle([
+            'suggested_category' => 'Actualidad',
+            'suggested_tags' => [],
+        ]);
+        Http::fake(function (Request $request) {
+            if ($request->method() === 'GET' && str_contains($request->url(), '/categories')) {
+                return Http::response([]);
+            }
+            if ($request->method() === 'POST' && str_contains($request->url(), '/categories')) {
+                return Http::response([
+                    'code' => 'term_exists',
+                    'message' => 'Ya existe en esta taxonomía un término con el nombre y el slug facilitados.',
+                    'data' => ['status' => 400, 'term_id' => '44'],
+                ], 400);
+            }
+            if ($request->method() === 'GET' && str_contains($request->url(), '/posts')) {
+                return Http::response([]);
+            }
+
+            return Http::response(['id' => 321, 'link' => 'https://portada.test/?p=321'], 201);
+        });
+
+        $publication = app(WordPressDraftService::class)->create($article);
+
+        $this->assertSame(321, $publication->wordpress_post_id);
+        Http::assertSent(fn (Request $request) => $request->method() === 'POST'
+            && str_ends_with($request->url(), '/posts')
+            && $request['categories'] === [44]);
+    }
+
     public function test_it_recovers_an_existing_remote_post_by_its_idempotency_slug(): void
     {
         config()->set('wordpress.sync_taxonomies', false);

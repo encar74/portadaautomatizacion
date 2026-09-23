@@ -10,6 +10,7 @@ use App\Models\GeneratedArticle;
 use App\Models\PressReleaseAttachment;
 use App\Models\WordPressPublication;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -114,7 +115,17 @@ class WordPressDraftService
                 return $term['id'];
             }
         }
-        $created = $this->client()->post('/wp-json/wp/v2/'.$taxonomy, ['name' => $name])->throw()->json();
+        try {
+            $created = $this->client()->post('/wp-json/wp/v2/'.$taxonomy, ['name' => $name])->throw()->json();
+        } catch (RequestException $exception) {
+            $error = $exception->response->json();
+            $existingTermId = data_get($error, 'data.term_id');
+            if (($error['code'] ?? null) === 'term_exists' && is_numeric($existingTermId)) {
+                return (int) $existingTermId;
+            }
+
+            throw $exception;
+        }
         if (! is_int($created['id'] ?? null)) {
             throw new RuntimeException("WordPress no devolvió el identificador para {$taxonomy}: {$name}.");
         }
