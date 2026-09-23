@@ -50,6 +50,8 @@ class ValidateArticle implements ShouldBeUnique, ShouldQueue
             && config('ai.auto_repair_enabled')
             && $validated->repair_attempted_at === null
             && $validated->pressRelease->pressSource?->processing_mode === ProcessingMode::Automatic) {
+            $validated->update(['repair_status' => 'queued']);
+            $validated->pressRelease()->update(['processing_status' => PressReleaseStatus::Repairing]);
             RepairArticle::dispatch($validated->id);
 
             return;
@@ -57,8 +59,14 @@ class ValidateArticle implements ShouldBeUnique, ShouldQueue
 
         if ($validated->validation_risk === ValidationRisk::Low
             && config('wordpress.enabled')
+            && ! $validated->requires_editorial_approval
             && $validated->pressRelease->pressSource?->processing_mode === ProcessingMode::Automatic) {
-            PublishArticleToWordPress::dispatch($validated->id);
+            $action = $validated->editorialActions()->create([
+                'type' => 'automatic_wordpress_draft',
+                'status' => 'pending',
+                'risk' => ValidationRisk::Low,
+            ]);
+            PublishArticleToWordPress::dispatch($validated->id, false, $action->id);
         }
     }
 

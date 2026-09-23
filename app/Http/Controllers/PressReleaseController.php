@@ -45,9 +45,10 @@ class PressReleaseController extends Controller
         $pressRelease->load([
             'pressSource',
             'attachments',
-            'generatedArticle.versions',
+            'generatedArticle.versions.author',
             'generatedArticle.validationAttempts.articleVersion',
             'generatedArticle.wordpressPublication',
+            'generatedArticle.editorialActions.user',
         ]);
         $body = $pressRelease->body_text;
         if (! filled($body) && filled($pressRelease->body_html)) {

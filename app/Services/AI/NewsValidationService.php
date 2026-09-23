@@ -87,6 +87,7 @@ class NewsValidationService
                 ]);
 
                 $needsReview = $validation->risk !== ValidationRisk::Low
+                    || $locked->requires_editorial_approval
                     || $locked->pressRelease->pressSource?->processing_mode === ProcessingMode::Review;
                 $locked->pressRelease->update([
                     'processing_status' => $needsReview

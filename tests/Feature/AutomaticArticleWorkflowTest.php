@@ -48,8 +48,25 @@ class AutomaticArticleWorkflowTest extends TestCase
 
         $article->refresh();
         $this->assertSame(ValidationRisk::High, $article->validation_risk);
-        $this->assertSame(PressReleaseStatus::NeedsReview, $article->pressRelease->fresh()->processing_status);
+        $this->assertSame(PressReleaseStatus::Repairing, $article->pressRelease->fresh()->processing_status);
+        $this->assertSame('queued', $article->repair_status);
         $this->assertSame(ValidationRisk::High, $article->validationAttempts()->sole()->risk);
+        Queue::assertPushed(RepairArticle::class, fn ($job) => $job->generatedArticleId === $article->id);
+    }
+
+    public function test_initial_medium_risk_also_dispatches_one_repair(): void
+    {
+        Queue::fake();
+        $article = $this->article();
+        app()->instance(AIProviderInterface::class, $this->validationProvider(ValidationRisk::Medium));
+
+        (new ValidateArticle($article->id))->handle(app(NewsValidationService::class));
+
+        $article->refresh();
+        $this->assertSame(ValidationRisk::Medium, $article->validation_risk);
+        $this->assertSame(PressReleaseStatus::Repairing, $article->pressRelease->fresh()->processing_status);
+        $this->assertSame('queued', $article->repair_status);
+        $this->assertSame(ValidationRisk::Medium, $article->validationAttempts()->sole()->risk);
         Queue::assertPushed(RepairArticle::class, fn ($job) => $job->generatedArticleId === $article->id);
     }
 
@@ -69,6 +86,20 @@ class AutomaticArticleWorkflowTest extends TestCase
         $this->assertNull($same->validation_risk);
         $this->assertSame('awaiting_validation', $same->repair_status);
         $this->assertSame([ArticleVersionOrigin::AI, ArticleVersionOrigin::AIRepair], $same->versions()->pluck('origin')->all());
+    }
+
+    public function test_medium_risk_article_can_be_repaired(): void
+    {
+        $article = $this->article(['validation_risk' => ValidationRisk::Medium]);
+        $article->versions()->create($this->versionData(1, ArticleVersionOrigin::AI));
+        $provider = $this->repairProvider();
+        app()->instance(AIProviderInterface::class, $provider);
+
+        $repaired = app(NewsRepairService::class)->repair($article);
+
+        $this->assertSame(1, $provider->generationCalls);
+        $this->assertNull($repaired->validation_risk);
+        $this->assertSame('awaiting_validation', $repaired->repair_status);
     }
 
     public function test_low_risk_after_repair_is_audited_and_queued_for_wordpress(): void

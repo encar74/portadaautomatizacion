@@ -14,17 +14,21 @@ use RuntimeException;
 
 class WordPressDraftService
 {
-    public function create(GeneratedArticle $article): WordPressPublication
-    {
+    public function create(
+        GeneratedArticle $article,
+        bool $allowMediumRisk = false,
+        bool $editoriallyApproved = false,
+    ): WordPressPublication {
         if ($existing = $article->wordpressPublication()->first()) {
             return $existing;
         }
 
         $article->loadMissing('pressRelease.pressSource');
-        if ($article->validation_risk !== ValidationRisk::Low) {
+        $acceptedRisks = $allowMediumRisk ? [ValidationRisk::Low, ValidationRisk::Medium] : [ValidationRisk::Low];
+        if (! in_array($article->validation_risk, $acceptedRisks, true)) {
             throw new RuntimeException('WordPress solo admite automáticamente artículos con riesgo bajo.');
         }
-        if ($article->pressRelease->pressSource?->processing_mode !== ProcessingMode::Automatic) {
+        if (! $editoriallyApproved && $article->pressRelease->pressSource?->processing_mode !== ProcessingMode::Automatic) {
             throw new RuntimeException('La fuente no está configurada en modo automático.');
         }
 

@@ -23,6 +23,11 @@ class ArticleVersion extends Model
         return ['origin' => ArticleVersionOrigin::class, 'tags' => 'array', 'version' => 'integer'];
     }
 
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function generatedArticle(): BelongsTo
     {
         return $this->belongsTo(GeneratedArticle::class);

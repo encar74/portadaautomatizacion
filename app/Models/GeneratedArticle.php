@@ -24,6 +24,7 @@ class GeneratedArticle extends Model
             'validation_risk' => ValidationRisk::class, 'validation_issues' => 'array',
             'generated_at' => 'datetime',
             'repair_attempted_at' => 'datetime', 'repaired_at' => 'datetime',
+            'requires_editorial_approval' => 'boolean',
         ];
     }
 
@@ -45,6 +46,11 @@ class GeneratedArticle extends Model
     public function validationAttempts(): HasMany
     {
         return $this->hasMany(ArticleValidationAttempt::class)->orderBy('sequence');
+    }
+
+    public function editorialActions(): HasMany
+    {
+        return $this->hasMany(ArticleEditorialAction::class)->latest();
     }
 
     public function wordpressPublication(): HasOne

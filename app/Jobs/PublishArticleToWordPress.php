@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Enums\PressReleaseStatus;
+use App\Models\ArticleEditorialAction;
 use App\Models\GeneratedArticle;
 use App\Services\WordPressDraftService;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -19,8 +20,11 @@ class PublishArticleToWordPress implements ShouldBeUnique, ShouldQueue
 
     public int $timeout = 60;
 
-    public function __construct(public readonly int $generatedArticleId)
-    {
+    public function __construct(
+        public readonly int $generatedArticleId,
+        public readonly bool $allowMediumRisk = false,
+        public readonly ?int $editorialActionId = null,
+    ) {
         $this->onQueue(config('press_releases.queue'));
     }
 
@@ -31,7 +35,17 @@ class PublishArticleToWordPress implements ShouldBeUnique, ShouldQueue
 
     public function handle(WordPressDraftService $service): void
     {
-        $service->create(GeneratedArticle::query()->findOrFail($this->generatedArticleId));
+        $publication = $service->create(
+            GeneratedArticle::query()->findOrFail($this->generatedArticleId),
+            $this->allowMediumRisk,
+            $this->editorialActionId !== null,
+        );
+        if ($this->editorialActionId !== null) {
+            ArticleEditorialAction::query()->whereKey($this->editorialActionId)->update([
+                'status' => 'completed',
+                'metadata' => ['wordpress_publication_id' => $publication->id],
+            ]);
+        }
     }
 
     /** @return list<int> */
@@ -45,6 +59,12 @@ class PublishArticleToWordPress implements ShouldBeUnique, ShouldQueue
         $article = GeneratedArticle::query()->find($this->generatedArticleId);
         if ($article === null) {
             return;
+        }
+        if ($this->editorialActionId !== null) {
+            ArticleEditorialAction::query()->whereKey($this->editorialActionId)->update([
+                'status' => 'failed',
+                'metadata' => ['error' => Str::limit($exception?->getMessage() ?? 'Error desconocido', 1000, '')],
+            ]);
         }
         $article->pressRelease()->update([
             'processing_status' => PressReleaseStatus::NeedsReview,

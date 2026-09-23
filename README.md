@@ -80,5 +80,21 @@ Fase 4: abstracción de IA, prompts versionados y generación de la noticia.
 ## AI_GENERATION_ENABLED=true para que vaya todo a la vez
 
 Fase 5: validación factual y cálculo de riesgo.
+
 Fase 6: integración con WordPress, siempre creando borradores e impidiendo duplicados.
 Fase 7: automatización completa con Scheduler, colas, reintentos y controles del dashboard.
+
+
+
+Correo recibido
+→ Seguridad de adjuntos
+→ Extracción del contenido
+→ Clasificación
+→ Generación del artículo
+→ Validación factual
+→ Decisión editorial
+    low → borrador de WordPress.
+    medium → un intento de reparación y nueva validación.
+    high → un intento de reparación y nueva validación.
+    Resultado low → borrador de WordPress.
+    Resultado medium o high → revisión humana, sin envío a WordPress.
