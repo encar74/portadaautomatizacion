@@ -8,6 +8,7 @@ enum PressReleaseStatus: string
     case UnmatchedSender = 'unmatched_sender';
     case Queued = 'queued';
     case Processing = 'processing';
+    case Repairing = 'repairing';
     case Processed = 'processed';
     case NeedsReview = 'needs_review';
     case WordPressDraftCreated = 'wordpress_draft_created';
@@ -21,6 +22,7 @@ enum PressReleaseStatus: string
             self::UnmatchedSender => 'Remitente sin identificar',
             self::Queued => 'En cola',
             self::Processing => 'Procesando',
+            self::Repairing => 'Reparando artículo',
             self::Processed => 'Procesado',
             self::NeedsReview => 'Pendiente de revisión',
             self::WordPressDraftCreated => 'Borrador en WordPress',

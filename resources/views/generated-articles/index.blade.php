@@ -44,6 +44,9 @@
                     <td class="max-w-lg px-6 py-4">
                         <a href="{{ route('press-releases.show', $article->pressRelease) }}#articulo" class="break-words font-semibold text-slate-900 hover:text-brand-600 hover:underline">{{ $article->headline }}</a>
                         <p class="mt-1 line-clamp-1 text-xs text-slate-500">Origen: {{ $article->pressRelease->subject }}</p>
+                        @if ($article->elevated_risk_validations_count > 0)
+                            <p class="mt-1 text-xs font-semibold text-amber-700">Tuvo riesgo medio o alto · {{ $article->repair_attempted_at ? 'reparación intentada' : 'sin reparar' }}</p>
+                        @endif
                     </td>
                     <td class="whitespace-nowrap px-6 py-4 text-slate-600">{{ $article->generated_at?->format('d/m/Y H:i') ?? '—' }}</td>
                     <td class="px-6 py-4 text-slate-600">{{ $article->pressRelease->pressSource?->name ?? 'Sin fuente asociada' }}</td>

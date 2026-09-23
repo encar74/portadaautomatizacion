@@ -23,6 +23,7 @@ class GeneratedArticle extends Model
             'suggested_tags' => 'array', 'warnings' => 'array',
             'validation_risk' => ValidationRisk::class, 'validation_issues' => 'array',
             'generated_at' => 'datetime',
+            'repair_attempted_at' => 'datetime', 'repaired_at' => 'datetime',
         ];
     }
 
@@ -39,6 +40,11 @@ class GeneratedArticle extends Model
     public function aiExecutions(): HasMany
     {
         return $this->hasMany(AIExecution::class);
+    }
+
+    public function validationAttempts(): HasMany
+    {
+        return $this->hasMany(ArticleValidationAttempt::class)->orderBy('sequence');
     }
 
     public function wordpressPublication(): HasOne

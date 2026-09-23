@@ -54,20 +54,39 @@ class NewsValidationService
                 promptVersion: $version,
             ));
 
-            $validated = DB::transaction(function () use ($article, $response): GeneratedArticle {
+            $validated = DB::transaction(function () use ($article, $response, $version): GeneratedArticle {
                 $locked = GeneratedArticle::query()->with('pressRelease.pressSource')->lockForUpdate()->findOrFail($article->id);
                 if ($locked->validation_risk !== null) {
                     return $locked;
                 }
 
                 $validation = $response->validation;
+                $context = $locked->repair_status === 'awaiting_validation' ? 'after_repair' : 'initial';
+                $sequence = ((int) $locked->validationAttempts()->max('sequence')) + 1;
+                $articleVersionId = $locked->versions()->orderByDesc('version')->value('id');
+
+                $locked->validationAttempts()->create([
+                    'article_version_id' => $articleVersionId,
+                    'sequence' => $sequence,
+                    'context' => $context,
+                    'risk' => $validation->risk,
+                    'issues' => $validation->issues,
+                    'warnings' => $validation->warnings,
+                    'provider' => $this->provider->name(),
+                    'model' => $response->model,
+                    'prompt_version' => $version,
+                ]);
+
                 $locked->update([
                     'warnings' => array_values(array_unique(array_merge($locked->warnings ?? [], $validation->warnings))),
                     'validation_risk' => $validation->risk,
                     'validation_issues' => $validation->issues,
+                    'repair_status' => $context === 'after_repair'
+                        ? ($validation->risk === ValidationRisk::Low ? 'resolved_low' : 'requires_review')
+                        : $locked->repair_status,
                 ]);
 
-                $needsReview = $validation->risk === ValidationRisk::High
+                $needsReview = $validation->risk !== ValidationRisk::Low
                     || $locked->pressRelease->pressSource?->processing_mode === ProcessingMode::Review;
                 $locked->pressRelease->update([
                     'processing_status' => $needsReview

@@ -42,7 +42,13 @@ class PressReleaseController extends Controller
 
     public function show(PressRelease $pressRelease): View
     {
-        $pressRelease->load(['pressSource', 'attachments', 'generatedArticle.versions']);
+        $pressRelease->load([
+            'pressSource',
+            'attachments',
+            'generatedArticle.versions',
+            'generatedArticle.validationAttempts.articleVersion',
+            'generatedArticle.wordpressPublication',
+        ]);
         $body = $pressRelease->body_text;
         if (! filled($body) && filled($pressRelease->body_html)) {
             $html = preg_replace('~<(script|style)\b[^>]*>.*?</\1\s*>~is', '', $pressRelease->body_html);

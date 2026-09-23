@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Enums\PressReleaseStatus;
+use App\Enums\ProcessingMode;
+use App\Enums\ValidationRisk;
 use App\Models\GeneratedArticle;
 use App\Models\PressRelease;
 use App\Services\AI\NewsValidationService;
@@ -41,7 +43,23 @@ class ValidateArticle implements ShouldBeUnique, ShouldQueue
     public function handle(NewsValidationService $service): void
     {
         $article = GeneratedArticle::query()->findOrFail($this->generatedArticleId);
-        $service->validate($article);
+        $validated = $service->validate($article);
+        $validated->loadMissing('pressRelease.pressSource');
+
+        if (in_array($validated->validation_risk, [ValidationRisk::Medium, ValidationRisk::High], true)
+            && config('ai.auto_repair_enabled')
+            && $validated->repair_attempted_at === null
+            && $validated->pressRelease->pressSource?->processing_mode === ProcessingMode::Automatic) {
+            RepairArticle::dispatch($validated->id);
+
+            return;
+        }
+
+        if ($validated->validation_risk === ValidationRisk::Low
+            && config('wordpress.enabled')
+            && $validated->pressRelease->pressSource?->processing_mode === ProcessingMode::Automatic) {
+            PublishArticleToWordPress::dispatch($validated->id);
+        }
     }
 
     public function failed(?Throwable $exception): void

@@ -43,6 +43,20 @@
                 <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">Pendiente de validación</span>
             @endif
         </div>
+        @php($hadElevatedRisk = $pressRelease->generatedArticle->validationAttempts->contains(fn ($attempt) => in_array($attempt->risk->value, ['medium', 'high'], true)))
+        @if ($hadElevatedRisk && $pressRelease->generatedArticle->repair_status === 'resolved_low')
+            <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                <p class="font-semibold">Reparado automáticamente después de una validación de riesgo medio o alto</p>
+                <p class="mt-1">El riesgo actual es bajo, pero este artículo fue modificado por la IA antes de enviarse a WordPress. Conviene revisar el historial inferior.</p>
+            </div>
+        @elseif ($hadElevatedRisk && in_array($pressRelease->generatedArticle->repair_status, ['requires_review', 'failed'], true))
+            <div class="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+                <p class="font-semibold">La reparación automática no resolvió el riesgo</p>
+                <p class="mt-1">El artículo permanece bloqueado para revisión humana y no se enviará automáticamente a WordPress.</p>
+            </div>
+        @elseif ($pressRelease->generatedArticle->repair_status === 'running' || $pressRelease->generatedArticle->repair_status === 'awaiting_validation')
+            <div class="mt-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">La reparación automática está en curso y todavía no puede enviarse a WordPress.</div>
+        @endif
         <h3 class="mt-5 text-2xl font-bold tracking-tight">{{ $pressRelease->generatedArticle->headline }}</h3>
         @if ($pressRelease->generatedArticle->subheadline)<p class="mt-2 text-lg text-slate-600">{{ $pressRelease->generatedArticle->subheadline }}</p>@endif
         <p class="mt-5 font-semibold leading-7 text-slate-800">{{ $pressRelease->generatedArticle->lead }}</p>
@@ -69,6 +83,43 @@
                 <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
                     @foreach ($pressRelease->generatedArticle->warnings as $warning)<li>{{ $warning }}</li>@endforeach
                 </ul>
+            </div>
+        @endif
+
+        @if ($pressRelease->generatedArticle->wordpressPublication)
+            <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+                <div><p class="font-semibold">Borrador creado en WordPress</p><p class="mt-1">El artículo aún no está publicado.</p></div>
+                @if ($pressRelease->generatedArticle->wordpressPublication->wordpress_edit_url)<a href="{{ $pressRelease->generatedArticle->wordpressPublication->wordpress_edit_url }}" target="_blank" rel="noopener noreferrer" class="font-semibold underline">Abrir en WordPress ↗</a>@endif
+            </div>
+        @endif
+
+        @if ($pressRelease->generatedArticle->validationAttempts->isNotEmpty())
+            <div class="mt-8 border-t border-slate-200 pt-6">
+                <h4 class="font-semibold">Historial de validación y reparación</h4>
+                <p class="mt-1 text-sm text-slate-500">Este registro se conserva aunque el riesgo actual cambie.</p>
+                <ol class="mt-4 space-y-4">
+                    @foreach ($pressRelease->generatedArticle->validationAttempts as $attempt)
+                        <li class="rounded-xl border border-slate-200 p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="font-semibold">Validación {{ $attempt->sequence }} · {{ $attempt->context === 'after_repair' ? 'después de la reparación' : 'artículo inicial' }}</p>
+                                <span @class([
+                                    'rounded-full px-3 py-1 text-xs font-semibold',
+                                    'bg-emerald-50 text-emerald-800' => $attempt->risk->value === 'low',
+                                    'bg-amber-50 text-amber-800' => $attempt->risk->value === 'medium',
+                                    'bg-red-50 text-red-800' => $attempt->risk->value === 'high',
+                                ])>{{ $attempt->risk->label() }}</span>
+                            </div>
+                            <p class="mt-2 text-xs text-slate-500">{{ $attempt->articleVersion?->origin->label() ?? 'Versión no disponible' }} · {{ $attempt->created_at?->format('d/m/Y H:i') }}</p>
+                            @if ($attempt->issues)
+                                <ul class="mt-3 space-y-2 text-sm text-slate-700">
+                                    @foreach ($attempt->issues as $issue)<li><span class="font-semibold">{{ $issue['claim'] ?? 'Incidencia' }}</span>: {{ $issue['explanation'] ?? '' }}</li>@endforeach
+                                </ul>
+                            @else
+                                <p class="mt-3 text-sm text-slate-600">No se detectaron incidencias factuales.</p>
+                            @endif
+                        </li>
+                    @endforeach
+                </ol>
             </div>
         @endif
     </section>

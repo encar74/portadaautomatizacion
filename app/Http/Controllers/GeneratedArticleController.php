@@ -20,7 +20,9 @@ class GeneratedArticleController extends Controller
             'status' => ['nullable', Rule::enum(PressReleaseStatus::class)],
         ]);
 
-        $query = GeneratedArticle::query()->with('pressRelease.pressSource');
+        $query = GeneratedArticle::query()
+            ->with('pressRelease.pressSource')
+            ->withCount(['validationAttempts as elevated_risk_validations_count' => fn ($query) => $query->whereIn('risk', ['medium', 'high'])]);
 
         if ($search = trim($filters['q'] ?? '')) {
             $query->where(function ($query) use ($search) {

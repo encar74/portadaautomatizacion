@@ -7,6 +7,7 @@ use Database\Factories\ArticleVersionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ArticleVersion extends Model
 {
@@ -25,5 +26,10 @@ class ArticleVersion extends Model
     public function generatedArticle(): BelongsTo
     {
         return $this->belongsTo(GeneratedArticle::class);
+    }
+
+    public function validationAttempts(): HasMany
+    {
+        return $this->hasMany(ArticleValidationAttempt::class);
     }
 }

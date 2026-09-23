@@ -4,6 +4,7 @@ return [
     'provider' => env('AI_PROVIDER', 'openai'),
     'generation_enabled' => (bool) env('AI_GENERATION_ENABLED', false),
     'validation_enabled' => (bool) env('AI_VALIDATION_ENABLED', false),
+    'auto_repair_enabled' => (bool) env('AI_AUTO_REPAIR_ENABLED', true),
     'models' => [
         'classification' => env('AI_MODEL_CLASSIFICATION'),
         'generation' => env('AI_MODEL_GENERATION'),
