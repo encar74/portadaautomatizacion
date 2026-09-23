@@ -157,12 +157,14 @@ class AutomaticArticleWorkflowTest extends TestCase
         config()->set('wordpress.url', 'https://portada.test');
         config()->set('wordpress.username', 'editor');
         config()->set('wordpress.application_password', 'secret');
-        Http::fake([
-            'https://portada.test/wp-json/wp/v2/posts' => Http::response([
+        config()->set('wordpress.sync_taxonomies', false);
+        config()->set('wordpress.upload_images', false);
+        Http::fake(fn ($request) => $request->method() === 'GET'
+            ? Http::response([])
+            : Http::response([
                 'id' => 321,
                 'link' => 'https://portada.test/?p=321',
-            ], 201),
-        ]);
+            ], 201));
         $article = $this->article(['validation_risk' => ValidationRisk::Low]);
 
         $publication = app(WordPressDraftService::class)->create($article);
@@ -170,7 +172,9 @@ class AutomaticArticleWorkflowTest extends TestCase
         $this->assertSame(321, $publication->wordpress_post_id);
         $this->assertSame('draft', $publication->wordpress_status);
         $this->assertSame(PressReleaseStatus::WordPressDraftCreated, $article->pressRelease->fresh()->processing_status);
-        Http::assertSent(fn ($request) => $request['status'] === 'draft' && $request['title'] === $article->headline);
+        Http::assertSent(fn ($request) => $request->method() === 'POST'
+            && $request['status'] === 'draft'
+            && $request['title'] === $article->headline);
     }
 
     private function article(array $attributes = []): GeneratedArticle

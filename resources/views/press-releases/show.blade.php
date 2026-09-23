@@ -92,7 +92,7 @@
         @endif
 
         @php($editorialBusy = in_array($pressRelease->generatedArticle->repair_status, ['queued', 'running', 'awaiting_validation'], true) || $pressRelease->generatedArticle->editorialActions->contains('status', 'pending'))
-        @if (! $pressRelease->generatedArticle->wordpressPublication && ! $editorialBusy)
+        @if (! $editorialBusy)
             <div class="mt-8 border-t border-slate-200 pt-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div><h4 class="font-semibold">Revisión editorial</h4><p class="mt-1 text-sm text-slate-500">Toda corrección crea una versión nueva y vuelve a pasar la validación factual.</p></div>
@@ -135,7 +135,7 @@
                                     @csrf
                                     <label for="justification" class="mb-1 block text-sm font-medium text-emerald-950">{{ $pressRelease->generatedArticle->validation_risk?->value === 'medium' ? 'Justificación obligatoria para aceptar el riesgo medio' : 'Nota de aprobación (opcional)' }}</label>
                                     <textarea id="justification" name="justification" rows="3" @required($pressRelease->generatedArticle->validation_risk?->value === 'medium') class="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2" placeholder="Indica qué has comprobado antes de aprobar.">{{ old('justification') }}</textarea>
-                                    <button class="mt-3 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white">Crear borrador en WordPress</button>
+                                    <button class="mt-3 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white">{{ $pressRelease->generatedArticle->wordpressPublication?->wordpress_post_id ? 'Actualizar borrador en WordPress' : 'Crear borrador en WordPress' }}</button>
                                 </form>
                             </div>
                         @elseif (! config('wordpress.enabled'))
@@ -144,15 +144,18 @@
                     </div>
                 </div>
             </div>
-        @elseif (! $pressRelease->generatedArticle->wordpressPublication && $editorialBusy)
+        @elseif ($editorialBusy)
             <div class="mt-8 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><span class="font-semibold">Hay una acción editorial en curso.</span> Las opciones de edición volverán a estar disponibles cuando termine la reparación, corrección o publicación pendiente.</div>
         @endif
 
-        @if ($pressRelease->generatedArticle->wordpressPublication)
+        @if ($pressRelease->generatedArticle->wordpressPublication?->wordpress_post_id)
             <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                <div><p class="font-semibold">Borrador creado en WordPress</p><p class="mt-1">El artículo aún no está publicado.</p></div>
+                <div><p class="font-semibold">Borrador creado en WordPress</p><p class="mt-1">El artículo aún no está publicado. Última sincronización: {{ $pressRelease->generatedArticle->wordpressPublication->last_synced_at?->format('d/m/Y H:i') ?? 'pendiente' }}.</p></div>
                 @if ($pressRelease->generatedArticle->wordpressPublication->wordpress_edit_url)<a href="{{ $pressRelease->generatedArticle->wordpressPublication->wordpress_edit_url }}" target="_blank" rel="noopener noreferrer" class="font-semibold underline">Abrir en WordPress ↗</a>@endif
             </div>
+        @endif
+        @if ($pressRelease->generatedArticle->wordpressPublication?->sync_status === 'failed')
+            <div class="mt-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"><p class="font-semibold">Falló la última sincronización con WordPress</p><p class="mt-1 break-words">{{ $pressRelease->generatedArticle->wordpressPublication->last_error }}</p></div>
         @endif
 
         @if ($pressRelease->generatedArticle->validationAttempts->isNotEmpty())
@@ -207,6 +210,7 @@
                             'medium_risk_override' => 'Aprobación excepcional con riesgo medio',
                             'wordpress_draft_approved' => 'Aprobación para WordPress',
                             'automatic_wordpress_draft' => 'Envío automático a WordPress',
+                            'wordpress_draft_updated' => 'Actualización del borrador de WordPress',
                             default => $action->type,
                         })
                         <li class="rounded-xl bg-slate-50 p-4 text-sm">

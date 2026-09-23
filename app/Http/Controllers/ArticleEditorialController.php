@@ -103,7 +103,7 @@ class ArticleEditorialController extends Controller
 
     public function publish(Request $request, GeneratedArticle $article): RedirectResponse
     {
-        abort_if($article->wordpressPublication()->exists(), 409, 'El borrador ya existe en WordPress.');
+        $hasWordPressDraft = $article->wordpressPublication()->whereNotNull('wordpress_post_id')->exists();
         if (! in_array($article->validation_risk, [ValidationRisk::Low, ValidationRisk::Medium], true)) {
             throw ValidationException::withMessages(['publication' => 'Solo se puede aprobar un artículo con riesgo bajo o medio.']);
         }
@@ -115,7 +115,9 @@ class ArticleEditorialController extends Controller
         $data = $request->validate($rules);
         $action = $article->editorialActions()->create([
             'user_id' => $request->user()->id,
-            'type' => $article->validation_risk === ValidationRisk::Medium ? 'medium_risk_override' : 'wordpress_draft_approved',
+            'type' => $hasWordPressDraft
+                ? 'wordpress_draft_updated'
+                : ($article->validation_risk === ValidationRisk::Medium ? 'medium_risk_override' : 'wordpress_draft_approved'),
             'status' => 'pending',
             'risk' => $article->validation_risk,
             'notes' => $data['justification'] ?? null,
@@ -132,7 +134,6 @@ class ArticleEditorialController extends Controller
 
     private function ensureEditable(GeneratedArticle $article): void
     {
-        abort_if($article->wordpressPublication()->exists(), 409, 'No se puede modificar desde aquí un artículo que ya tiene borrador en WordPress.');
         abort_if(in_array($article->repair_status, ['queued', 'running', 'awaiting_validation'], true), 409, 'La reparación automática todavía está en curso.');
         abort_if($article->editorialActions()->where('status', 'pending')->exists(), 409, 'Ya existe una acción editorial pendiente para este artículo.');
     }

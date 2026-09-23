@@ -18,7 +18,11 @@ class WordPressPublication extends Model
 
     protected function casts(): array
     {
-        return ['wordpress_post_id' => 'integer', 'last_synced_at' => 'datetime'];
+        return [
+            'wordpress_post_id' => 'integer',
+            'last_synced_at' => 'datetime',
+            'last_attempted_at' => 'datetime',
+        ];
     }
 
     public function generatedArticle(): BelongsTo
