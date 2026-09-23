@@ -90,6 +90,25 @@ class NewsValidationServiceTest extends TestCase
         $this->assertSame(PressReleaseStatus::NeedsReview, $validated->pressRelease->fresh()->processing_status);
     }
 
+    public function test_low_risk_after_editorial_intervention_waits_for_wordpress_approval(): void
+    {
+        app()->instance(AIProviderInterface::class, $this->provider(new ArticleValidationData(
+            ValidationRisk::Low,
+            [],
+            [],
+        )));
+        $article = $this->article();
+        $article->update(['requires_editorial_approval' => true]);
+
+        $validated = app(NewsValidationService::class)->validate($article);
+
+        $this->assertSame(ValidationRisk::Low, $validated->validation_risk);
+        $this->assertSame(
+            PressReleaseStatus::AwaitingWordPressApproval,
+            $validated->pressRelease->fresh()->processing_status,
+        );
+    }
+
     public function test_provider_failure_is_recorded_without_assigning_risk(): void
     {
         app()->instance(AIProviderInterface::class, new class implements AIProviderInterface

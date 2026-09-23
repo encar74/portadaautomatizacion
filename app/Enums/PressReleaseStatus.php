@@ -11,6 +11,7 @@ enum PressReleaseStatus: string
     case Repairing = 'repairing';
     case Processed = 'processed';
     case NeedsReview = 'needs_review';
+    case AwaitingWordPressApproval = 'awaiting_wordpress_approval';
     case WordPressDraftCreated = 'wordpress_draft_created';
     case Error = 'error';
     case Ignored = 'ignored';
@@ -25,6 +26,7 @@ enum PressReleaseStatus: string
             self::Repairing => 'Reparando artículo',
             self::Processed => 'Procesado',
             self::NeedsReview => 'Pendiente de revisión',
+            self::AwaitingWordPressApproval => 'Pendiente de envío a WordPress',
             self::WordPressDraftCreated => 'Borrador en WordPress',
             self::Error => 'Error',
             self::Ignored => 'Ignorado',

@@ -86,13 +86,16 @@ class NewsValidationService
                         : $locked->repair_status,
                 ]);
 
+                $awaitingWordPressApproval = $validation->risk === ValidationRisk::Low
+                    && $locked->requires_editorial_approval;
                 $needsReview = $validation->risk !== ValidationRisk::Low
-                    || $locked->requires_editorial_approval
                     || $locked->pressRelease->pressSource?->processing_mode === ProcessingMode::Review;
                 $locked->pressRelease->update([
-                    'processing_status' => $needsReview
-                        ? PressReleaseStatus::NeedsReview
-                        : PressReleaseStatus::Processed,
+                    'processing_status' => match (true) {
+                        $awaitingWordPressApproval => PressReleaseStatus::AwaitingWordPressApproval,
+                        $needsReview => PressReleaseStatus::NeedsReview,
+                        default => PressReleaseStatus::Processed,
+                    },
                     'error_message' => null,
                 ]);
 
