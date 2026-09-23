@@ -91,7 +91,9 @@
             </div>
         @endif
 
-        @php($editorialBusy = in_array($pressRelease->generatedArticle->repair_status, ['queued', 'running', 'awaiting_validation'], true) || $pressRelease->generatedArticle->editorialActions->contains('status', 'pending'))
+        @php($wordPressSyncFailed = $pressRelease->generatedArticle->wordpressPublication?->sync_status === 'failed')
+        @php($blockingPendingAction = $pressRelease->generatedArticle->editorialActions->contains(fn ($action) => $action->status === 'pending' && (! $wordPressSyncFailed || ! in_array($action->type, ['automatic_wordpress_draft', 'wordpress_draft_approved', 'wordpress_draft_updated', 'wordpress_draft_retry'], true))))
+        @php($editorialBusy = in_array($pressRelease->generatedArticle->repair_status, ['queued', 'running', 'awaiting_validation'], true) || $blockingPendingAction)
         @if (! $editorialBusy)
             <div class="mt-8 border-t border-slate-200 pt-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
@@ -135,7 +137,7 @@
                                     @csrf
                                     <label for="justification" class="mb-1 block text-sm font-medium text-emerald-950">{{ $pressRelease->generatedArticle->validation_risk?->value === 'medium' ? 'Justificación obligatoria para aceptar el riesgo medio' : 'Nota de aprobación (opcional)' }}</label>
                                     <textarea id="justification" name="justification" rows="3" @required($pressRelease->generatedArticle->validation_risk?->value === 'medium') class="w-full rounded-lg border border-emerald-300 bg-white px-3 py-2" placeholder="Indica qué has comprobado antes de aprobar.">{{ old('justification') }}</textarea>
-                                    <button class="mt-3 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white">{{ $pressRelease->generatedArticle->wordpressPublication?->wordpress_post_id ? 'Actualizar borrador en WordPress' : 'Crear borrador en WordPress' }}</button>
+                                    <button class="mt-3 rounded-lg bg-emerald-700 px-5 py-2 text-sm font-semibold text-white">{{ $wordPressSyncFailed ? 'Reintentar envío a WordPress' : ($pressRelease->generatedArticle->wordpressPublication?->wordpress_post_id ? 'Actualizar borrador en WordPress' : 'Crear borrador en WordPress') }}</button>
                                 </form>
                             </div>
                         @elseif (! config('wordpress.enabled'))
@@ -211,6 +213,7 @@
                             'wordpress_draft_approved' => 'Aprobación para WordPress',
                             'automatic_wordpress_draft' => 'Envío automático a WordPress',
                             'wordpress_draft_updated' => 'Actualización del borrador de WordPress',
+                            'wordpress_draft_retry' => 'Reintento de envío a WordPress',
                             default => $action->type,
                         })
                         <li class="rounded-xl bg-slate-50 p-4 text-sm">

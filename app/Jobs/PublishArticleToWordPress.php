@@ -67,7 +67,7 @@ class PublishArticleToWordPress implements ShouldBeUnique, ShouldQueue
             ]);
         }
         $article->pressRelease()->update([
-            'processing_status' => PressReleaseStatus::NeedsReview,
+            'processing_status' => PressReleaseStatus::AwaitingWordPressApproval,
             'error_message' => Str::limit('No se pudo crear el borrador en WordPress: '.($exception?->getMessage() ?? 'error desconocido'), 65535, ''),
         ]);
     }

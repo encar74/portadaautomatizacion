@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AttachmentType;
+use App\Enums\PressReleaseStatus;
 use App\Enums\ValidationRisk;
 use App\Models\GeneratedArticle;
 use App\Models\PressReleaseAttachment;
@@ -158,6 +159,7 @@ class WordPressDraftServiceTest extends TestCase
             $this->assertSame('failed', $publication->sync_status);
             $this->assertNotNull($publication->last_error);
             $this->assertNotNull($publication->last_attempted_at);
+            $this->assertSame(PressReleaseStatus::AwaitingWordPressApproval, $article->pressRelease->fresh()->processing_status);
         }
     }
 

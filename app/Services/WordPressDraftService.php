@@ -57,6 +57,10 @@ class WordPressDraftService
             return $this->markSynced($article, $publication, $response, $payloadHash);
         } catch (Throwable $exception) {
             $publication->update(['sync_status' => 'failed', 'last_error' => Str::limit($exception->getMessage(), 65535, '')]);
+            $article->pressRelease()->update([
+                'processing_status' => PressReleaseStatus::AwaitingWordPressApproval,
+                'error_message' => Str::limit('No se pudo enviar el borrador a WordPress: '.$exception->getMessage(), 65535, ''),
+            ]);
 
             throw $exception;
         }

@@ -13,6 +13,7 @@ use App\Jobs\PublishArticleToWordPress;
 use App\Jobs\ValidateArticle;
 use App\Models\GeneratedArticle;
 use App\Models\User;
+use App\Models\WordPressPublication;
 use App\Services\AI\GuidedArticleCorrectionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -140,5 +141,34 @@ class ArticleEditorialReviewTest extends TestCase
 
         Queue::assertNothingPushed();
         $this->assertDatabaseCount('article_editorial_actions', 0);
+    }
+
+    public function test_failed_wordpress_sync_can_be_retried_without_being_blocked_by_the_old_action(): void
+    {
+        Queue::fake();
+        config()->set('wordpress.enabled', true);
+        $article = GeneratedArticle::factory()->create(['validation_risk' => ValidationRisk::Low]);
+        $oldAction = $article->editorialActions()->create([
+            'type' => 'wordpress_draft_approved',
+            'status' => 'pending',
+            'risk' => ValidationRisk::Low,
+        ]);
+        WordPressPublication::factory()->for($article)->create([
+            'wordpress_post_id' => null,
+            'sync_status' => 'failed',
+            'last_error' => 'Error anterior',
+        ]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('press-releases.show', $article->press_release_id))
+            ->assertOk()
+            ->assertSee('Reintentar envío a WordPress')
+            ->assertDontSee('Hay una acción editorial en curso.');
+        $this->actingAs($user)->post(route('generated-articles.wordpress-draft', $article))->assertRedirect();
+
+        $this->assertSame('failed', $oldAction->fresh()->status);
+        $retry = $article->editorialActions()->where('type', 'wordpress_draft_retry')->sole();
+        $this->assertSame('pending', $retry->status);
+        Queue::assertPushed(PublishArticleToWordPress::class, fn ($job) => $job->editorialActionId === $retry->id);
     }
 }

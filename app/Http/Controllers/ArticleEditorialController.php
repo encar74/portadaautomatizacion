@@ -104,6 +104,7 @@ class ArticleEditorialController extends Controller
     public function publish(Request $request, GeneratedArticle $article): RedirectResponse
     {
         $hasWordPressDraft = $article->wordpressPublication()->whereNotNull('wordpress_post_id')->exists();
+        $failedPublication = $article->wordpressPublication()->where('sync_status', 'failed')->exists();
         if (! in_array($article->validation_risk, [ValidationRisk::Low, ValidationRisk::Medium], true)) {
             throw ValidationException::withMessages(['publication' => 'Solo se puede aprobar un artículo con riesgo bajo o medio.']);
         }
@@ -113,11 +114,19 @@ class ArticleEditorialController extends Controller
             $rules['justification'] = ['required', 'string', 'min:20', 'max:2000'];
         }
         $data = $request->validate($rules);
+        if ($failedPublication) {
+            $article->editorialActions()
+                ->where('status', 'pending')
+                ->whereIn('type', ['automatic_wordpress_draft', 'wordpress_draft_approved', 'wordpress_draft_updated', 'wordpress_draft_retry'])
+                ->update(['status' => 'failed']);
+        }
         $action = $article->editorialActions()->create([
             'user_id' => $request->user()->id,
-            'type' => $hasWordPressDraft
-                ? 'wordpress_draft_updated'
-                : ($article->validation_risk === ValidationRisk::Medium ? 'medium_risk_override' : 'wordpress_draft_approved'),
+            'type' => $failedPublication
+                ? 'wordpress_draft_retry'
+                : ($hasWordPressDraft
+                    ? 'wordpress_draft_updated'
+                    : ($article->validation_risk === ValidationRisk::Medium ? 'medium_risk_override' : 'wordpress_draft_approved')),
             'status' => 'pending',
             'risk' => $article->validation_risk,
             'notes' => $data['justification'] ?? null,
