@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Route;
 Route::redirect('/', '/press-sources');
 
 Route::middleware('guest')->group(function () {
+    Route::get('/forgot-password', [\App\Http\Controllers\Auth\PasswordRecoveryController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\Auth\PasswordRecoveryController::class, 'send'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\PasswordRecoveryController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [\App\Http\Controllers\Auth\PasswordRecoveryController::class, 'update'])->middleware('throttle:5,1')->name('password.update');
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
