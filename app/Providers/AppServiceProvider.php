@@ -29,6 +29,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($user, string $token) {
+            return (new \Illuminate\Notifications\Messages\MailMessage)
+                ->subject('Restablece tu contraseña · Portada.info')
+                ->view('emails.reset-password', [
+                    'resetUrl' => route('password.reset', [
+                        'token' => $token,
+                        'email' => $user->getEmailForPasswordReset(),
+                    ]),
+                    'expires' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire'),
+                ]);
+        });
     }
 }
