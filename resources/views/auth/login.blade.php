@@ -11,7 +11,7 @@
     </section>
     <section class="flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-12">
         <div class="w-full max-w-md">
-            <div class="mb-10 lg:hidden"><img src="{{ asset('images/logo-portada.png') }}" alt="Portada.info" class="h-auto w-52"><p class="mt-2 text-xs font-medium uppercase tracking-[.16em] text-slate-400">HERRAMIENTAS DE REDACCIÓN</p></div>
+            <div class="mb-10 lg:hidden"><img src="{{ asset('images/logo-portada.png') }}" alt="Portada.info" class="h-auto w-52"><p class="mt-2 text-xs font-medium uppercase tracking-[.16em] text-slate-400">HERRAMIENTAS DE REDACCIÓN </p></div>
             <p class="text-sm font-semibold text-brand-600">Bienvenido de nuevo</p><h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-950">Accede a tu cuenta</h2><p class="mt-3 text-sm leading-6 text-slate-500">Un espacio de trabajo interno para el equipo de Portada.info.</p>
             @if ($errors->any())<div class="mt-7 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></svg>{{ $errors->first() }}</div>@endif
             @if (session('status'))<p role="status" class="mt-6 rounded-xl bg-green-50 p-4 text-sm text-green-800">{{ session('status') }}</p>@endif
