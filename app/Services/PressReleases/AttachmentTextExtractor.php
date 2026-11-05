@@ -6,6 +6,7 @@ use App\Exceptions\BlockedPressReleaseAttachment;
 use App\Exceptions\PressReleaseExtractionException;
 use App\Models\PressReleaseAttachment;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
 use Throwable;
@@ -18,7 +19,7 @@ class AttachmentTextExtractor
 
     public function extract(PressReleaseAttachment $attachment): ?string
     {
-        if (! in_array($attachment->extension, ['pdf', 'docx'], true)) {
+        if (! in_array($attachment->extension, ['pdf', 'doc', 'docx'], true)) {
             return null;
         }
 
@@ -30,12 +31,13 @@ class AttachmentTextExtractor
             $text = match ($attachment->extension) {
                 'pdf' => $this->pdfParser->parseContent($contents)->getText(),
                 'docx' => $this->extractDocx($contents),
+                'doc' => $this->extractDoc($contents),
             };
         } catch (BlockedPressReleaseAttachment $exception) {
             throw $exception;
         } catch (Throwable $exception) {
             throw new PressReleaseExtractionException(
-                "No se pudo extraer el texto de {$attachment->original_filename}.",
+                "No se pudo extraer el texto de {$attachment->original_filename}: {$exception->getMessage()}",
                 previous: $exception,
             );
         }
@@ -46,6 +48,34 @@ class AttachmentTextExtractor
     private function isEncryptedPdf(string $contents): bool
     {
         return preg_match('/\/Encrypt\s+(?:\d+\s+\d+\s+R|<<)/i', $contents) === 1;
+    }
+
+    private function extractDoc(string $contents): string
+    {
+        $path = tempnam(sys_get_temp_dir(), 'press-doc-');
+        if ($path === false) {
+            throw new PressReleaseExtractionException('No se pudo preparar el documento DOC.');
+        }
+
+        try {
+            if (file_put_contents($path, $contents) === false) {
+                throw new PressReleaseExtractionException('No se pudo escribir el documento DOC temporal.');
+            }
+
+            $binary = config('press_releases.doc_extractor_binary');
+            $command = PHP_OS_FAMILY === 'Darwin'
+                ? [$binary, '-convert', 'txt', '-format', 'doc', '-stdout', $path]
+                : [$binary, '-m', 'UTF-8.txt', $path];
+            $result = Process::timeout(60)->run($command);
+
+            if (! $result->successful() || trim($result->output()) === '') {
+                throw new PressReleaseExtractionException('El lector DOC no pudo obtener texto. Comprueba que el documento sea válido y sin contraseña y que esté instalado el lector configurado en PRESS_RELEASES_DOC_EXTRACTOR_BINARY.');
+            }
+
+            return $result->output();
+        } finally {
+            @unlink($path);
+        }
     }
 
     private function extractDocx(string $contents): string

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\AttachmentType;
 use App\Enums\PressReleaseStatus;
+use App\Exceptions\PressReleaseExtractionException;
 use App\Jobs\ExtractPressReleaseContent;
 use App\Jobs\GenerateArticle;
 use App\Models\PressRelease;
@@ -11,6 +12,7 @@ use App\Models\PressReleaseAttachment;
 use App\Models\PressSource;
 use App\Services\PressReleases\PressReleaseContentExtractionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -63,6 +65,37 @@ class PressReleaseContentExtractionTest extends TestCase
 
         $this->assertNull($attachment->fresh()->extracted_text);
         $this->assertStringNotContainsString('foto.jpg', $release->fresh()->source_text);
+    }
+
+    public function test_doc_text_is_included_in_the_release_source(): void
+    {
+        Process::fake(['*' => Process::result(output: "Contenido del Word antiguo\n")]);
+        $release = PressRelease::factory()->create(['processing_status' => PressReleaseStatus::Queued]);
+        $attachment = $this->attachment($release, 'nota.doc', 'doc');
+        Storage::disk('local')->put($attachment->storage_path, 'doc bytes');
+
+        (new ExtractPressReleaseContent($release->id))->handle(app(PressReleaseContentExtractionService::class));
+
+        $this->assertSame('Contenido del Word antiguo', $attachment->fresh()->extracted_text);
+        $this->assertStringContainsString('Contenido del Word antiguo', $release->fresh()->source_text);
+        $this->assertSame(PressReleaseStatus::Processed, $release->fresh()->processing_status);
+        Process::assertRan(fn ($process) => in_array(config('press_releases.doc_extractor_binary'), $process->command, true));
+    }
+
+    public function test_unreadable_doc_marks_extraction_as_failed(): void
+    {
+        Process::fake(['*' => Process::result(errorOutput: 'Invalid document', exitCode: 1)]);
+        $release = PressRelease::factory()->create(['processing_status' => PressReleaseStatus::Queued]);
+        $attachment = $this->attachment($release, 'nota.doc', 'doc');
+        Storage::disk('local')->put($attachment->storage_path, 'invalid');
+
+        try {
+            (new ExtractPressReleaseContent($release->id))->handle(app(PressReleaseContentExtractionService::class));
+            $this->fail('La extracción debería haber fallado.');
+        } catch (PressReleaseExtractionException) {
+            $this->assertSame(PressReleaseStatus::Error, $release->fresh()->processing_status);
+            $this->assertNull($attachment->fresh()->extracted_text);
+        }
     }
 
     public function test_job_extracts_text_from_pdf(): void

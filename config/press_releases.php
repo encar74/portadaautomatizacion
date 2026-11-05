@@ -3,6 +3,7 @@
 return [
     'disk' => env('PRESS_RELEASES_DISK', 'press-releases-s3'),
     'queue' => env('PRESS_RELEASES_QUEUE', 'default'),
+    'doc_extractor_binary' => env('PRESS_RELEASES_DOC_EXTRACTOR_BINARY', PHP_OS_FAMILY === 'Darwin' ? '/usr/bin/textutil' : 'antiword'),
     'max_raw_message_bytes' => (int) env('PRESS_RELEASES_MAX_EMAIL_BYTES', 25 * 1024 * 1024),
     'max_attachment_bytes' => (int) env('PRESS_RELEASES_MAX_ATTACHMENT_BYTES', 15 * 1024 * 1024),
     'max_attachments' => (int) env('PRESS_RELEASES_MAX_ATTACHMENTS', 20),
