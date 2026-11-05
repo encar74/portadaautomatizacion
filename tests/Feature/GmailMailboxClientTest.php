@@ -6,6 +6,7 @@ use App\Contracts\MailboxClientInterface;
 use App\Models\PressSource;
 use App\Services\Mail\Gmail\GmailApiClient;
 use App\Services\Mail\Gmail\GmailMailboxClient;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -18,6 +19,7 @@ class GmailMailboxClientTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo(CarbonImmutable::parse('2026-09-21 12:00:00', config('app.timezone')));
         config()->set('mail_ingestion.gmail', [
             'client_id' => 'client-id',
             'client_secret' => 'client-secret',
@@ -65,7 +67,7 @@ class GmailMailboxClientTest extends TestCase
         $client->markImported($message->messageId);
 
         Http::assertSent(fn (Request $request) => str_ends_with(parse_url($request->url(), PHP_URL_PATH), '/messages')
-            && $request['q'] === '(in:inbox -label:portada-importado) {from:"prensa@example.com"}');
+            && $request['q'] === '(in:inbox -label:portada-importado) {from:"prensa@example.com"} after:'.(now()->startOfDay()->timestamp - 1));
 
         Http::assertSent(fn (Request $request) => str_contains($request->url(), '/messages/gmail-1/modify')
             && $request['addLabelIds'] === ['Label_42']
@@ -119,7 +121,8 @@ class GmailMailboxClientTest extends TestCase
             && str_starts_with($request['q'], '(in:inbox OR is:starred) {')
             && str_contains($request['q'], 'from:"comunicacion@villena.es"')
             && str_contains($request['q'], 'from:"agency.example"')
-            && ! str_contains($request['q'], 'inactive@example.com'));
+            && ! str_contains($request['q'], 'inactive@example.com')
+            && str_contains($request['q'], ' after:'.(now()->startOfDay()->timestamp - 1)));
     }
 
     public function test_messages_not_matching_a_source_are_not_imported_or_labeled(): void
@@ -151,12 +154,35 @@ class GmailMailboxClientTest extends TestCase
         Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/modify'));
     }
 
+    public function test_old_messages_are_skipped_before_downloading_content(): void
+    {
+        PressSource::factory()->create(['email' => 'prensa@example.com']);
+        Http::fake(function (Request $request) {
+            if ($request->url() === 'https://oauth2.googleapis.com/token') {
+                return Http::response(['access_token' => 'test']);
+            }
+            if (str_contains($request->url(), 'format=full')) {
+                return Http::response([
+                    'id' => 'gmail-old',
+                    'internalDate' => (string) (now()->startOfDay()->getTimestampMs() - 1),
+                ]);
+            }
+
+            return Http::response(['messages' => [['id' => 'gmail-old']]]);
+        });
+
+        $this->assertSame([], iterator_to_array(app(GmailMailboxClient::class)->messages()));
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'format=raw')
+            || str_contains($request->url(), '/attachments/')
+            || str_contains($request->url(), '/modify'));
+    }
+
     private function fullMessage(): array
     {
         return [
             'id' => 'gmail-1',
             'threadId' => 'thread-1',
-            'internalDate' => '1789984800000',
+            'internalDate' => (string) now()->startOfDay()->getTimestampMs(),
             'payload' => [
                 'mimeType' => 'multipart/mixed',
                 'headers' => [

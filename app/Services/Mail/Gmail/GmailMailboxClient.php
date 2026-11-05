@@ -6,6 +6,7 @@ use App\Contracts\MailboxClientInterface;
 use App\Enums\PressSourceMatchType;
 use App\Models\PressSource;
 use App\Services\PressSources\PressSourceMatcher;
+use Carbon\CarbonImmutable;
 use LogicException;
 
 class GmailMailboxClient implements MailboxClientInterface
@@ -33,12 +34,18 @@ class GmailMailboxClient implements MailboxClientInterface
             return;
         }
 
+        $startOfToday = CarbonImmutable::now(config('app.timezone'))->startOfDay();
         $baseQuery = trim((string) config('mail_ingestion.gmail.query'));
-        $query = ($baseQuery === '' ? '' : '('.$baseQuery.') ').'{'.$senders->implode(' ').'}';
+        $query = ($baseQuery === '' ? '' : '('.$baseQuery.') ').'{'.$senders->implode(' ').'} after:'.($startOfToday->getTimestamp() - 1);
 
         foreach ($this->client->listMessages($query) as $summary) {
             $gmailId = (string) $summary['id'];
             $full = $this->client->message($gmailId, 'full');
+            // Check Gmail's receipt timestamp before downloading raw content or attachments.
+            if (! isset($full['internalDate'])
+                || (int) $full['internalDate'] < $startOfToday->getTimestampMs()) {
+                continue;
+            }
             $raw = $this->client->message($gmailId, 'raw');
             $data = $this->mapper->map($full, $this->client->decodeBase64Url((string) $raw['raw']));
             // Gmail searches can be broader than our exact email/domain rules.
