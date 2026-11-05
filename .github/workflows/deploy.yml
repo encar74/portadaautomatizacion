@@ -11,7 +11,7 @@ concurrency:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -29,6 +29,16 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Comprobar compatibilidad de dependencias
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, openssl, pdo_mysql, session, tokenizer, xml, curl, dom, fileinfo
+          coverage: none
+      - name: Validar dependencias antes de conectar al servidor
+        run: |
+          composer validate --strict --no-check-publish
+          composer check-platform-reqs --lock --no-dev
       - name: Preparar SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
