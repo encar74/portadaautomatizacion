@@ -109,6 +109,7 @@ class NewsGenerationService
             $execution->update([
                 'duration_ms' => $this->durationMs($startedAt),
                 'status' => AIExecutionStatus::Failed,
+                'provider_error_code' => AIAvailability::errorCode($exception),
                 'error_message' => Str::limit($exception->getMessage(), 65535, ''),
             ]);
 

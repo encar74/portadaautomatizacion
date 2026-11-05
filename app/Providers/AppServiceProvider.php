@@ -4,8 +4,12 @@ namespace App\Providers;
 
 use App\Contracts\AIProviderInterface;
 use App\Contracts\MailboxClientInterface;
+use App\Services\AI\AIAvailability;
 use App\Services\AI\Providers\OpenAIProvider;
 use App\Services\Mail\Gmail\GmailMailboxClient;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -29,8 +33,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($user, string $token) {
-            return (new \Illuminate\Notifications\Messages\MailMessage)
+        View::composer('layouts.app', function ($view): void {
+            $view->with('aiIndicator', app(AIAvailability::class)->indicator());
+        });
+        ResetPassword::toMailUsing(function ($user, string $token) {
+            return (new MailMessage)
                 ->subject('Restablece tu contraseña · Portada.info')
                 ->view('emails.reset-password', [
                     'resetUrl' => route('password.reset', [

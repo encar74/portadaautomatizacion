@@ -29,6 +29,7 @@
                 Fuentes de prensa
             </a>
         </nav>
+        <div class="px-4 pb-4">@include('partials.ai-status')</div>
         <div class="border-t border-white/10 p-4">
             <div class="mb-3 flex items-center gap-3 px-2">
                 <div class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-800 text-sm font-bold text-brand-500">{{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</div>
@@ -50,6 +51,7 @@
         <main class="mx-auto max-w-7xl px-4 py-7 sm:px-6 md:px-8 lg:py-10">
             @if (session('status'))<div class="mb-6 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm"><svg class="mt-0.5 h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m4.5 12.75 6 6 9-13.5"/></svg>{{ session('status') }}</div>@endif
             @if ($errors->any())<div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 shadow-sm"><p class="font-semibold">Revisa los datos indicados:</p><ul class="mt-2 list-disc space-y-1 pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+            <div class="mb-5 lg:hidden">@include('partials.ai-status')</div>
             @yield('content')
         </main>
     </div>

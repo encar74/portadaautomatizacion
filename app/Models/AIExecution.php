@@ -25,7 +25,17 @@ class AIExecution extends Model
             'status' => AIExecutionStatus::class, 'estimated_cost' => 'decimal:6',
             'input_tokens' => 'integer', 'output_tokens' => 'integer',
             'total_tokens' => 'integer', 'duration_ms' => 'integer',
+            'finished_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (AIExecution $execution): void {
+            if ($execution->isDirty('status') && in_array($execution->status, [AIExecutionStatus::Successful, AIExecutionStatus::Failed], true)) {
+                $execution->finished_at ??= now();
+            }
+        });
     }
 
     public function pressRelease(): BelongsTo
