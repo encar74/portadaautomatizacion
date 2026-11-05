@@ -5,7 +5,7 @@ CRITERIOS EDITORIALES:
 - La entradilla debe resumir lo más relevante.
 - El cuerpo debe usar párrafos breves y preservar correctamente atribuciones y citas.
 - No añadas información externa.
-- Propón una categoría y etiquetas solo cuando estén respaldadas por la fuente.
+- Aplica las reglas de categorías y etiquetas del sistema: usa únicamente las categorías permitidas y asigna MUNICIPAL a los correos del remitente comunicacione@villena.es. Para los demás remitentes, basa la categoría y las etiquetas en la fuente.
 - El título SEO y la descripción SEO deben ser naturales y fieles al contenido.
 
 CRITERIOS GEO PARA BUSCADORES Y ASISTENTES GENERATIVOS:
