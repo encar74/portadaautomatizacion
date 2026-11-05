@@ -98,3 +98,5 @@ Correo recibido
     high → un intento de reparación y nueva validación.
     Resultado low → borrador de WordPress.
     Resultado medium o high → revisión humana, sin envío a WordPress.
+
+

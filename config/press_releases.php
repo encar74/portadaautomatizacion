@@ -10,6 +10,7 @@ return [
     'max_source_text_chars' => (int) env('PRESS_RELEASES_MAX_SOURCE_TEXT_CHARS', 500000),
     'allowed_mime_types' => [
         'application/pdf' => ['extension' => 'pdf', 'type' => 'document'],
+        'application/msword' => ['extension' => 'doc', 'type' => 'document'],
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => ['extension' => 'docx', 'type' => 'document'],
         'image/jpeg' => ['extension' => 'jpg', 'type' => 'image'],
         'image/png' => ['extension' => 'png', 'type' => 'image'],
