@@ -35,6 +35,7 @@ class WordPressDraftServiceTest extends TestCase
     public function test_it_uploads_images_resolves_taxonomies_and_never_creates_the_same_post_twice(): void
     {
         $article = $this->automaticArticle([
+            'headline' => 'Villena impulsa la innovación digital',
             'validation_risk' => ValidationRisk::Low,
             'suggested_category' => 'Local',
             'suggested_tags' => ['Actualidad'],
@@ -63,6 +64,7 @@ class WordPressDraftServiceTest extends TestCase
         $this->assertCount(1, $createRequests);
         $payload = $createRequests->first()[0];
         $this->assertSame('draft', $payload['status']);
+        $this->assertSame('villena-impulsa-la-innovacion-digital-'.$article->id, $payload['slug']);
         $this->assertSame(55, $payload['featured_media']);
         $this->assertSame([7], $payload['categories']);
         $this->assertEqualsCanonicalizing([11, 12], $payload['tags']);

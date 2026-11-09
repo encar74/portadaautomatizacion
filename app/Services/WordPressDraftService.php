@@ -82,15 +82,23 @@ class WordPressDraftService
         return DB::transaction(function () use ($article): WordPressPublication {
             $publication = WordPressPublication::query()->lockForUpdate()->firstOrCreate(
                 ['generated_article_id' => $article->id],
-                ['idempotency_key' => 'portada-article-'.$article->id, 'wordpress_status' => 'draft', 'sync_status' => 'pending'],
+                ['idempotency_key' => $this->articleSlug($article), 'wordpress_status' => 'draft', 'sync_status' => 'pending'],
             );
             if (! filled($publication->idempotency_key)) {
-                $publication->idempotency_key = 'portada-article-'.$article->id;
+                $publication->idempotency_key = $this->articleSlug($article);
             }
             $publication->forceFill(['sync_status' => 'syncing', 'last_error' => null, 'last_attempted_at' => now()])->save();
 
             return $publication;
         });
+    }
+
+    private function articleSlug(GeneratedArticle $article): string
+    {
+        $title = Str::slug($article->headline);
+        $title = rtrim(Str::limit($title, 160, ''), '-');
+
+        return ($title !== '' ? $title : 'noticia').'-'.$article->id;
     }
 
     /** @return list<int> */
