@@ -6,9 +6,13 @@
     <h1 class="mt-2 text-3xl font-bold tracking-tight">Correos recibidos</h1>
     <p class="mt-2 text-sm text-slate-500">Consulta los correos importados, sus adjuntos y su estado de procesamiento.</p>
 </div>
-<form method="GET" action="{{ route('press-releases.index') }}" class="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft sm:flex-row sm:items-end">
+<form method="GET" action="{{ route('press-releases.index') }}" class="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft sm:flex-row sm:flex-wrap sm:items-end">
     <div class="flex-1"><label for="q" class="mb-2 block text-sm font-medium">Buscar</label><input id="q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Asunto, nombre o email del remitente" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2"></div>
     <div><label for="status" class="mb-2 block text-sm font-medium">Estado</label><select id="status" name="status" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2"><option value="">Todos los estados</option>@foreach ($statuses as $status)<option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>@endforeach</select></div>
+    <div>
+        <label for="month" class="mb-2 block text-sm font-medium">Mes y año</label>
+        <input type="month" id="month" name="month" value="{{ $filters['month'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
+    </div>
     <button class="rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white">Filtrar</button>
     <a href="{{ route('press-releases.index') }}" class="px-2 py-2 text-sm text-slate-600 underline">Limpiar</a>
 </form>

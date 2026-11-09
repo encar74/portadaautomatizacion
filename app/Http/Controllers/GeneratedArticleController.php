@@ -16,6 +16,7 @@ class GeneratedArticleController extends Controller
         $riskValues = array_map(fn (ValidationRisk $risk) => $risk->value, ValidationRisk::cases());
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:200'],
+            'month' => ['nullable', 'date_format:Y-m'],
             'risk' => ['nullable', Rule::in([...$riskValues, 'pending'])],
             'status' => ['nullable', Rule::enum(PressReleaseStatus::class)],
         ]);
@@ -44,6 +45,11 @@ class GeneratedArticleController extends Controller
 
         if ($status = $filters['status'] ?? null) {
             $query->whereHas('pressRelease', fn ($query) => $query->where('processing_status', $status));
+        }
+
+        if ($month = $filters['month'] ?? null) {
+            $start = \Carbon\CarbonImmutable::createFromFormat('!Y-m', $month);
+            $query->where('generated_at', '>=', $start)->where('generated_at', '<', $start->addMonth());
         }
 
         return view('generated-articles.index', [

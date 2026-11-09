@@ -7,7 +7,7 @@
     <p class="mt-2 text-sm text-slate-500">Consulta las noticias generadas, su validación factual y el estado del proceso.</p>
 </div>
 
-<form method="GET" action="{{ route('generated-articles.index') }}" class="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft md:grid-cols-[minmax(16rem,1fr)_auto_auto_auto_auto] md:items-end">
+<form method="GET" action="{{ route('generated-articles.index') }}" class="mb-6 grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-soft md:grid-cols-3 xl:grid-cols-[minmax(16rem,1fr)_auto_auto_auto_auto_auto] md:items-end">
     <div>
         <label for="q" class="mb-2 block text-sm font-medium">Buscar</label>
         <input id="q" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Titular, entradilla, correo o remitente" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2">
@@ -26,6 +26,10 @@
             <option value="">Todos los estados</option>
             @foreach ($statuses as $status)<option value="{{ $status->value }}" @selected(($filters['status'] ?? '') === $status->value)>{{ $status->label() }}</option>@endforeach
         </select>
+    </div>
+    <div>
+        <label for="month" class="mb-2 block text-sm font-medium">Mes y año</label>
+        <input type="month" id="month" name="month" value="{{ $filters['month'] ?? '' }}" class="w-full rounded-lg border border-slate-300 bg-white px-3 py-2">
     </div>
     <button class="rounded-lg bg-slate-950 px-5 py-2 text-sm font-semibold text-white">Filtrar</button>
     <a href="{{ route('generated-articles.index') }}" class="px-2 py-2 text-sm text-slate-600 underline">Limpiar</a>

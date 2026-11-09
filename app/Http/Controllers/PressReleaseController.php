@@ -17,6 +17,7 @@ class PressReleaseController extends Controller
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:200'],
+            'month' => ['nullable', 'date_format:Y-m'],
             'status' => ['nullable', Rule::enum(PressReleaseStatus::class)],
         ]);
         $query = PressRelease::query()
@@ -31,6 +32,11 @@ class PressReleaseController extends Controller
         }
         if ($status = $filters['status'] ?? null) {
             $query->where('processing_status', $status);
+        }
+
+        if ($month = $filters['month'] ?? null) {
+            $start = \Carbon\CarbonImmutable::createFromFormat('!Y-m', $month);
+            $query->where('received_at', '>=', $start)->where('received_at', '<', $start->addMonth());
         }
 
         return view('press-releases.index', [
