@@ -20,6 +20,20 @@ class WordPressDraftServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_long_headlines_fit_the_idempotency_key_column(): void
+    {
+        config()->set('wordpress.sync_taxonomies', false);
+        config()->set('wordpress.upload_images', false);
+        $article = $this->automaticArticle(['headline' => str_repeat('Innovación en Villena ', 20)]);
+        $this->fakeWordPress();
+
+        $publication = app(WordPressDraftService::class)->create($article);
+
+        $this->assertLessThanOrEqual(80, strlen($publication->idempotency_key));
+        $this->assertStringStartsWith('innovacion-en-villena-', $publication->idempotency_key);
+        $this->assertStringEndsWith('-'.$article->id, $publication->idempotency_key);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

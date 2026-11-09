@@ -96,7 +96,7 @@ class WordPressDraftService
     private function articleSlug(GeneratedArticle $article): string
     {
         $title = Str::slug($article->headline);
-        $title = rtrim(Str::limit($title, 160, ''), '-');
+        $title = rtrim(Str::limit($title, 80 - strlen((string) $article->id) - 1, ''), '-');
 
         return ($title !== '' ? $title : 'noticia').'-'.$article->id;
     }
