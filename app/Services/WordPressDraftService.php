@@ -95,10 +95,28 @@ class WordPressDraftService
 
     private function articleSlug(GeneratedArticle $article): string
     {
-        $title = Str::slug($article->headline);
-        $title = rtrim(Str::limit($title, 80 - strlen((string) $article->id) - 1, ''), '-');
+        $title = Str::slug($article->headline) ?: 'noticia';
+        $slug = $this->shortenSlug($title, 80);
 
-        return ($title !== '' ? $title : 'noticia').'-'.$article->id;
+        if (WordPressPublication::query()->where('idempotency_key', $slug)
+            ->where('generated_article_id', '!=', $article->id)->exists()) {
+            $suffix = '-'.$article->id;
+            $slug = $this->shortenSlug($title, 80 - strlen($suffix)).$suffix;
+        }
+
+        return $slug;
+    }
+
+    private function shortenSlug(string $slug, int $limit): string
+    {
+        if (strlen($slug) <= $limit) {
+            return $slug;
+        }
+
+        $prefix = substr($slug, 0, $limit + 1);
+        $boundary = strrpos($prefix, '-');
+
+        return $boundary !== false ? substr($prefix, 0, $boundary) : substr($slug, 0, $limit);
     }
 
     /** @return list<int> */
@@ -222,9 +240,29 @@ class WordPressDraftService
     private function content(GeneratedArticle $article): string
     {
         $paragraphs = preg_split('/\R{2,}/u', trim($article->body)) ?: [];
-        $html = '<p><strong>'.e($article->lead).'</strong></p>';
+        $html = '<p><strong>'.$this->linkedText($article->lead).'</strong></p>';
         foreach ($paragraphs as $paragraph) {
-            $html .= '<p>'.nl2br(e(trim($paragraph)), false).'</p>';
+            $html .= '<p>'.nl2br($this->linkedText(trim($paragraph)), false).'</p>';
+        }
+
+        return $html;
+    }
+
+    private function linkedText(string $text): string
+    {
+        $parts = preg_split('~(https?://[^\s<>"\x{00a0}]+)~iu', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $html = '';
+        foreach ($parts ?: [] as $index => $part) {
+            if ($index % 2 === 0) {
+                $html .= e($part);
+                continue;
+            }
+
+            $url = rtrim($part, '.,;:!?');
+            while (str_ends_with($url, ')') && substr_count($url, ')') > substr_count($url, '(')) {
+                $url = substr($url, 0, -1);
+            }
+            $html .= '<a href="'.e($url).'">'.e($url).'</a>'.e(substr($part, strlen($url)));
         }
 
         return $html;

@@ -20,6 +20,29 @@ class WordPressDraftServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_urls_are_clickable_and_article_html_is_escaped(): void
+    {
+        config()->set('wordpress.sync_taxonomies', false);
+        config()->set('wordpress.upload_images', false);
+        $article = $this->automaticArticle([
+            'lead' => 'Inscripción: https://forms.cloud.microsoft/e/DJ1QDSaWk6'."\u{00A0}".'o más información.',
+            'body' => 'Consulta https://patpaisajevinocv.es/. <script>alert(1)</script> https://example.org/?a=1&b=2',
+        ]);
+        $this->fakeWordPress();
+
+        app(WordPressDraftService::class)->create($article);
+
+        Http::assertSent(function (Request $request) {
+            $content = $request['content'] ?? '';
+
+            return str_contains($content, '<a href="https://forms.cloud.microsoft/e/DJ1QDSaWk6">')
+                && str_contains($content, '<a href="https://patpaisajevinocv.es/">https://patpaisajevinocv.es/</a>.')
+                && str_contains($content, 'href="https://example.org/?a=1&amp;b=2"')
+                && str_contains($content, '&lt;script&gt;')
+                && ! str_contains($content, '<script>');
+        });
+    }
+
     public function test_long_headlines_fit_the_idempotency_key_column(): void
     {
         config()->set('wordpress.sync_taxonomies', false);
@@ -31,7 +54,7 @@ class WordPressDraftServiceTest extends TestCase
 
         $this->assertLessThanOrEqual(80, strlen($publication->idempotency_key));
         $this->assertStringStartsWith('innovacion-en-villena-', $publication->idempotency_key);
-        $this->assertStringEndsWith('-'.$article->id, $publication->idempotency_key);
+        $this->assertSame('innovacion-en-villena-innovacion-en-villena-innovacion-en-villena-innovacion-en', $publication->idempotency_key);
     }
 
     protected function setUp(): void
@@ -78,7 +101,7 @@ class WordPressDraftServiceTest extends TestCase
         $this->assertCount(1, $createRequests);
         $payload = $createRequests->first()[0];
         $this->assertSame('draft', $payload['status']);
-        $this->assertSame('villena-impulsa-la-innovacion-digital-'.$article->id, $payload['slug']);
+        $this->assertSame('villena-impulsa-la-innovacion-digital', $payload['slug']);
         $this->assertSame(55, $payload['featured_media']);
         $this->assertSame([7], $payload['categories']);
         $this->assertEqualsCanonicalizing([11, 12], $payload['tags']);
