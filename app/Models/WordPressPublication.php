@@ -16,6 +16,15 @@ class WordPressPublication extends Model
 
     protected $guarded = [];
 
+    public function getWordpressEditUrlAttribute(?string $value): ?string
+    {
+        if (! $value) {
+            return $value;
+        }
+
+        return preg_replace('~^https?://(?:www\.)?~i', 'https://www.', $value);
+    }
+
     protected function casts(): array
     {
         return [
