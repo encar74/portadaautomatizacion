@@ -41,6 +41,7 @@ class PressReleaseService
                 $source = $this->sourceMatcher->match($senderEmail);
                 $status = match (true) {
                     $source === null => PressReleaseStatus::UnmatchedSender,
+                    $source->excludesSubject($data->subject) => PressReleaseStatus::Ignored,
                     $source->processing_mode === ProcessingMode::Ignore => PressReleaseStatus::Ignored,
                     default => PressReleaseStatus::Received,
                 };

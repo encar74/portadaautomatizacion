@@ -26,6 +26,7 @@ class PressSourceRequest extends FormRequest
             'default_category' => ['nullable', 'string', 'max:255'],
             'default_tags' => ['nullable', 'string', 'max:1000'],
             'priority' => ['required', 'integer', 'min:-100000', 'max:100000'],
+            'excluded_subjects' => ['nullable', 'string', 'max:10000'],
             'notes' => ['nullable', 'string', 'max:10000'],
         ];
     }
@@ -46,6 +47,9 @@ class PressSourceRequest extends FormRequest
         $data['domain'] = $data['match_type'] === PressSourceMatchType::Domain->value ? $data['domain'] : null;
         $data['default_tags'] = collect(explode(',', (string) ($data['default_tags'] ?? '')))
             ->map(fn (string $tag) => trim($tag))->filter()->unique()->values()->all();
+
+        $data['excluded_subjects'] = collect(preg_split('/\R/u', (string) ($data['excluded_subjects'] ?? '')))
+            ->map(fn (string $phrase) => trim($phrase))->filter(fn ($phrase) => $phrase !== '')->unique()->values()->all();
 
         return $key === null ? $data : data_get($data, $key, $default);
     }
